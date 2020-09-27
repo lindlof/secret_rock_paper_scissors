@@ -1,18 +1,6 @@
 # Secret Rock Paper Scissors
 
-Rock paper scissors game secret contract for Secret Network.
-
-## Testing
-
-Compile:
-```
-cargo wasm
-```
-
-Unit tests:
-```
-cargo unit-test
-```
+Rock paper scissors game for Secret Network.
 
 ## Dev deployment
 

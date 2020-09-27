@@ -7,5 +7,5 @@ services:
       - '26656:26656'
       - '1317:1317'
     volumes:
-      - '.:/root/code'
+      - './contract:/root/code'
     image: 'enigmampc/secret-network-sw-dev:v1.0.0'
