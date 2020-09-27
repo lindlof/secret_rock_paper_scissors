@@ -1,0 +1,11 @@
+version: "3.8"
+services:
+  secretdev:
+    container_name: srps_dev
+    ports:
+      - '26657:26657'
+      - '26656:26656'
+      - '1317:1317'
+    volumes:
+      - '.:/root/code'
+    image: 'enigmampc/secret-network-sw-dev:v1.0.0'

@@ -1,0 +1,6 @@
+version: '3.8'
+services:
+  secret-contract-optimizer:
+    volumes:
+      - '.:/contract'
+    image: 'enigmampc/secret-contract-optimizer:1.0.3'
