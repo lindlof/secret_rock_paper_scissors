@@ -3,21 +3,43 @@ use cosmwasm_std::{
     StdResult, Storage,
 };
 
-use crate::msg::{InitMsg, HandleMsg, QueryMsg};
+use crate::msg::{InitMsg, HandleMsg, QueryMsg, Handsign};
+use crate::state::{config, State};
 
 pub fn init<S: Storage, A: Api, Q: Querier>(
-    _deps: &mut Extern<S, A, Q>,
+    deps: &mut Extern<S, A, Q>,
     _env: Env,
     _msg: InitMsg,
 ) -> StdResult<InitResponse> {
+    let state = State {
+        last_handsign: None,
+    };
+
+    config(&mut deps.storage).save(&state)?;
+
     Ok(InitResponse::default())
 }
 
 pub fn handle<S: Storage, A: Api, Q: Querier>(
-    _deps: &mut Extern<S, A, Q>,
-    _env: Env,
-    _msg: HandleMsg,
+    deps: &mut Extern<S, A, Q>,
+    env: Env,
+    msg: HandleMsg,
 ) -> StdResult<HandleResponse> {
+    match msg {
+        HandleMsg::PlayHand { handsign } => play_hand(deps, env, handsign),
+    }
+}
+
+pub fn play_hand<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    _env: Env,
+    handsign: Handsign,
+) -> StdResult<HandleResponse> {
+    config(&mut deps.storage).update(|mut state| {
+        state.last_handsign = Some(handsign);
+        Ok(state)
+    })?;
+
     Ok(HandleResponse::default())
 }
 
