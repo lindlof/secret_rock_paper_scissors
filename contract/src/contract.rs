@@ -1,9 +1,9 @@
 use cosmwasm_std::{
-    Api, Env, Extern, HandleResponse, InitResponse, QueryResponse, Querier,
+    to_binary, Api, Binary, Env, Extern, HandleResponse, InitResponse, Querier,
     StdResult, Storage,
 };
 
-use crate::msg::{InitMsg, HandleMsg, QueryMsg, Handsign};
+use crate::msg::{InitMsg, HandleMsg, QueryMsg, Handsign, Outcome, OutcomeResponse};
 use crate::state::{config, State};
 
 pub fn init<S: Storage, A: Api, Q: Querier>(
@@ -44,17 +44,25 @@ pub fn play_hand<S: Storage, A: Api, Q: Querier>(
 }
 
 pub fn query<S: Storage, A: Api, Q: Querier>(
-    _deps: &Extern<S, A, Q>,
-    _msg: QueryMsg,
-) -> StdResult<QueryResponse> {
-    Ok(QueryResponse::default())
+    deps: &Extern<S, A, Q>,
+    msg: QueryMsg,
+) -> StdResult<Binary> {
+    match msg {
+        QueryMsg::GetOutcome {} => to_binary(&query_count(deps)?),
+    }
+}
+
+
+fn query_count<S: Storage, A: Api, Q: Querier>(_deps: &Extern<S, A, Q>) -> StdResult<OutcomeResponse> {
+    //let state = config_read(&deps.storage).load()?;
+    Ok(OutcomeResponse { outcome: Outcome::WON })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use cosmwasm_std::testing::{mock_dependencies, mock_env};
-    use cosmwasm_std::{coins};
+    use cosmwasm_std::{coins, from_binary};
 
     #[test]
     fn proper_initialization() {
@@ -64,5 +72,25 @@ mod tests {
 
         let res = init(&mut deps, env, msg).unwrap();
         assert_eq!(0, res.messages.len());
+    }
+
+    #[test]
+    fn play() {
+        let mut deps = mock_dependencies(20, &[]);
+        let env = mock_env("creator", &coins(1000, "earth"));
+        let msg = InitMsg{};
+        let _res = init(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player1", &coins(2, "token"));
+        let msg = HandleMsg::PlayHand {handsign: Handsign::ROCK};
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player2", &coins(2, "token"));
+        let msg = HandleMsg::PlayHand {handsign: Handsign::PAPER};
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        let res = query(&deps, QueryMsg::GetOutcome{}).unwrap();
+        let value: OutcomeResponse = from_binary(&res).unwrap();
+        assert_eq!(Outcome::WON, value.outcome);
     }
 }
