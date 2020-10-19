@@ -10,9 +10,12 @@ pub static CONFIG_KEY: &[u8] = b"config";
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct State {
-    pub last_handsign: Option<Handsign>,
     pub player1: HumanAddr,
+    pub player1_handsign: Option<Handsign>,
+    pub player1_wins: u8,
     pub player2: Option<HumanAddr>,
+    pub player2_handsign: Option<Handsign>,
+    pub player2_wins: u8,
 }
 
 pub fn config<S: Storage>(storage: &mut S) -> Singleton<S, State> {

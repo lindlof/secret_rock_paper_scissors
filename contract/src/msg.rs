@@ -12,8 +12,14 @@ pub enum HandleMsg {
     PlayHand { handsign: Handsign },
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub enum Handsign { ROCK, PAPER, SCISSORS }
+#[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, JsonSchema)]
+pub enum Handsign { ROCK=0, PAPER=1, SCISSORS=2 }
+
+impl Handsign {
+    pub fn beats(&self, b: Handsign) -> bool {
+        (b as u8 + 1) % 3 == *self as u8
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
@@ -22,9 +28,7 @@ pub enum QueryMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct OutcomeResponse {
-    pub outcome: Outcome,
+pub struct StatusResponse {
+    pub player1_wins: u8,
+    pub player2_wins: u8,
 }
-
-#[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub enum Outcome { WON, LOST, TIE, PENDING }
