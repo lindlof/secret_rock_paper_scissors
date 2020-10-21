@@ -9,3 +9,23 @@ services:
     volumes:
       - './contract:/root/code'
     image: 'enigmampc/secret-network-sw-dev:v1.0.2'
+    networks:
+      - secretnetwork
+  lcdserver:
+    ports:
+      - '1337:1337'
+    image: 'enigmampc/secret-network-sw-dev:v1.0.2'
+    entrypoint: 'secretcli rest-server --trust-node=true --node tcp://secretdev:26657 --laddr tcp://0.0.0.0:1337'
+    networks:
+      - secretnetwork
+  corsproxy:
+    image: caddy
+    ports:
+      - '1338:1338'
+    volumes:
+      - './Caddyfile:/etc/caddy/Caddyfile'
+    networks:
+      - secretnetwork
+
+networks:
+  secretnetwork:
