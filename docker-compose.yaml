@@ -8,12 +8,11 @@ services:
       - '1317:1317'
     volumes:
       - './contract:/root/code'
+      - './docker:/root/docker'
     image: 'enigmampc/secret-network-sw-dev:v1.0.2'
     networks:
       - secretnetwork
   lcdserver:
-    ports:
-      - '1337:1337'
     image: 'enigmampc/secret-network-sw-dev:v1.0.2'
     entrypoint: 'secretcli rest-server --trust-node=true --node tcp://secretdev:26657 --laddr tcp://0.0.0.0:1337'
     networks:
@@ -23,7 +22,7 @@ services:
     ports:
       - '1338:1338'
     volumes:
-      - './Caddyfile:/etc/caddy/Caddyfile'
+      - './docker/Caddyfile:/etc/caddy/Caddyfile'
     networks:
       - secretnetwork
 
