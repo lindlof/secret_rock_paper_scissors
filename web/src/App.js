@@ -5,6 +5,7 @@ import * as bip39 from 'bip39';
 function App() {
   const [client, setClient] = useState(null);
   const [gameStatus, setGameStatus] = useState(null);
+  const [account, setAccount] = useState(null);
   useEffect(() => {
     initClient().then((c) => setClient(c));
   }, []);
@@ -16,9 +17,27 @@ function App() {
       })
       .then((gs) => setGameStatus(gs));
   }, [client]);
+  useEffect(() => {
+    if (!client) return;
+    client
+      .getAccount(client.senderAddress)
+      .then((account) => setAccount(account));
+  }, [client]);
 
   return (
     <div>
+      {account ? (
+        <div>
+          <p>Wallet address: {account.address}</p>
+          <p>
+            Wallet balance: {account.balance[0].amount}
+            {account.balance[0].denom}
+          </p>
+        </div>
+      ) : (
+        <p>Wallet not loaded</p>
+      )}
+
       {gameStatus ? (
         <div>
           <p>Player 1 wins: {gameStatus.player1_wins}</p>
@@ -47,14 +66,14 @@ const initClient = async () => {
   }
 
   const signingPen = await SecretJS.Secp256k1Pen.fromMnemonic(mnemonic);
-  const myWalletAddress = SecretJS.pubkeyToAddress(
+  const walletAddress = SecretJS.pubkeyToAddress(
     SecretJS.encodeSecp256k1Pubkey(signingPen.pubkey),
     'secret',
   );
 
   const secretJsClient = new SecretJS.SigningCosmWasmClient(
     'http://localhost:1338',
-    myWalletAddress,
+    walletAddress,
     (signBytes) => signingPen.sign(signBytes),
     tx_encryption_seed,
     {
@@ -68,8 +87,7 @@ const initClient = async () => {
       },
     },
   );
-  //console.log(await secretJsClient.getAccount(myWalletAddress));
-  console.log(`contract ${process.env.REACT_APP_CONTRACT}`);
+  console.log(await secretJsClient.getAccount(walletAddress));
   return secretJsClient;
 };
 

@@ -22,3 +22,9 @@ Interact with contract:
 cd web
 npm run deploy
 ```
+
+Fund wallet address:
+
+```
+npm run fund <address>
+```
