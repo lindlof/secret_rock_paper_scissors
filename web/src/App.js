@@ -8,33 +8,37 @@ function App() {
   const [contract, setContract] = useState(null);
   const [joinContract, setJoinContract] = useState(null);
   const [gameStatus, setGameStatus] = useState(null);
+  const [address, setAddress] = useState(null);
   const [account, setAccount] = useState(null);
   useEffect(() => {
-    initClient().then((c) => setClient(c));
-  }, []);
-  useEffect(() => {
-    if (!client) return;
+    if (!client || !contract) return;
     client
       .queryContractSmart(contract, {
         get_outcome: {},
       })
       .then((gs) => setGameStatus(gs));
-  }, [contract]);
+  }, [client, contract]);
   useEffect(() => {
     if (!client) return;
     client
       .getAccount(client.senderAddress)
       .then((account) => setAccount(account));
   }, [client]);
+  useEffect(() => {
+    initClient(setClient, setAddress);
+    setContract(localStorage.getItem('contract'));
+  }, []);
 
   return (
     <div>
-      {account ? (
+      {address ? (
         <div>
-          <p>Wallet address: {account.address}</p>
+          <p>Wallet address: {address}</p>
           <p>
-            Wallet balance: {account.balance[0].amount}
-            {account.balance[0].denom}
+            Wallet balance:{' '}
+            {account
+              ? account.balance[0].amount + account.balance[0].denom
+              : ''}
           </p>
         </div>
       ) : (
@@ -59,6 +63,20 @@ function App() {
             onClick={() => playHandsign(client, contract, 'ROCK')}
           >
             Rock
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => playHandsign(client, contract, 'PAPER')}
+          >
+            Paper
+          </Button>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => playHandsign(client, contract, 'SCISSORS')}
+          >
+            Scissors
           </Button>
         </div>
       ) : (
@@ -96,8 +114,8 @@ const instantiateGame = async (client, setContract) => {
     {},
     `Game ${Date.now()}`,
   );
+  localStorage.setItem('contract', result.contractAddress);
   setContract(result.contractAddress);
-  console.log(result);
 };
 
 const joinGame = async (client, contract, setContract) => {
@@ -114,6 +132,7 @@ const joinGame = async (client, contract, setContract) => {
       },
     ],
   );
+  localStorage.setItem('contract', contract);
   setContract(contract);
 };
 
@@ -137,7 +156,7 @@ const playHandsign = async (client, contract, handsign) => {
   }
 };
 
-const initClient = async () => {
+const initClient = async (setClient, setAddress) => {
   let mnemonic = localStorage.getItem('mnemonic');
   if (!mnemonic) {
     mnemonic = bip39.generateMnemonic();
@@ -157,6 +176,7 @@ const initClient = async () => {
     SecretJS.encodeSecp256k1Pubkey(signingPen.pubkey),
     'secret',
   );
+  setAddress(walletAddress);
 
   const secretJsClient = new SecretJS.SigningCosmWasmClient(
     'http://localhost:1338',
@@ -174,7 +194,7 @@ const initClient = async () => {
       },
     },
   );
-  console.log(await secretJsClient.getAccount(walletAddress));
+  setClient(secretJsClient);
   return secretJsClient;
 };
 
