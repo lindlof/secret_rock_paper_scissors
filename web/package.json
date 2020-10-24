@@ -4,9 +4,6 @@
   "private": true,
   "dependencies": {
     "@material-ui/core": "^4.11.0",
-    "@testing-library/jest-dom": "^5.11.4",
-    "@testing-library/react": "^11.1.0",
-    "@testing-library/user-event": "^12.1.8",
     "bip39": "^3.0.2",
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
@@ -17,7 +14,6 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject",
     "deploy": "./script/deploy.sh",
     "fund": "./script/fund.sh"
   },
@@ -37,6 +33,13 @@
     ]
   },
   "devDependencies": {
-    "prettier": "2.1.2"
+    "@testing-library/jest-dom": "^5.11.4",
+    "@testing-library/react": "^11.1.0",
+    "@testing-library/user-event": "^12.1.8",
+    "@types/jest": "^26.0.15",
+    "@types/node": "^14.14.0",
+    "@types/react": "^16.9.53",
+    "@types/react-dom": "^16.9.8",
+    "prettier": "^2.1.2"
   }
 }
