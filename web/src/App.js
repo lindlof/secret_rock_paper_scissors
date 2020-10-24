@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { Button, Input } from '@material-ui/core';
 import * as SecretJS from 'secretjs';
 import * as bip39 from 'bip39';
-import { useInterval } from './utils';
+import { useInterval, useStickyState } from './utils';
 
 function App() {
   const [client, setClient] = useState(null);
-  const [contract, setContract] = useState(null);
+  const [contract, setContract] = useStickyState(null, 'gameContract');
   const [joinContract, setJoinContract] = useState(null);
   const [gameLobby, setGameLobby] = useState(null);
   const [gameStatus, setGameStatus] = useState(null);
@@ -20,7 +20,6 @@ function App() {
   }, [client]);
   useEffect(() => {
     initClient(setClient, setAddress);
-    setContract(localStorage.getItem('contract'));
   }, []);
   useInterval(() => {
     if (!client || !contract) return;
@@ -145,7 +144,6 @@ const instantiateGame = async (client, setContract) => {
     {},
     `Game ${Date.now()}`,
   );
-  localStorage.setItem('contract', result.contractAddress);
   setContract(result.contractAddress);
 };
 
@@ -163,7 +161,6 @@ const joinGame = async (client, contract, setContract) => {
       },
     ],
   );
-  localStorage.setItem('contract', contract);
   setContract(contract);
 };
 
