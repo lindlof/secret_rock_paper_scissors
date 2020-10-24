@@ -13,7 +13,11 @@ pub enum HandleMsg {
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, JsonSchema)]
-pub enum Handsign { ROCK=0, PAPER=1, SCISSORS=2 }
+pub enum Handsign {
+    ROCK = 0,
+    PAPER = 1,
+    SCISSORS = 2,
+}
 
 impl Handsign {
     pub fn beats(&self, b: Handsign) -> bool {
@@ -31,4 +35,6 @@ pub enum QueryMsg {
 pub struct StatusResponse {
     pub player1_wins: u8,
     pub player2_wins: u8,
+    pub player1_played: bool,
+    pub player2_played: bool,
 }

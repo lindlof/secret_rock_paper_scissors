@@ -7,7 +7,7 @@ Rock paper scissors game for Secret Network.
 Compile optimized contract:
 
 ```
-docker-compose -f docker-optimize.yaml up
+docker-compose -f docker-optimize.yaml up --build
 ```
 
 Run dev node:

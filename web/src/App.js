@@ -49,10 +49,27 @@ function App() {
       {contract ? (
         <div>
           <p>Game contract {contract}</p>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => leaveGame(setContract)}
+          >
+            Leave game
+          </Button>
           {gameStatus ? (
             <div>
               <p>Player 1 wins: {gameStatus.player1_wins}</p>
               <p>Player 2 wins: {gameStatus.player2_wins}</p>
+              <p>
+                {gameStatus.player1_played
+                  ? 'Player 1 played'
+                  : 'Waiting for Player 1'}
+              </p>
+              <p>
+                {gameStatus.player2_played
+                  ? 'Player 2 played'
+                  : 'Waiting for Player 2'}
+              </p>
             </div>
           ) : (
             <p>Loading...</p>
@@ -135,6 +152,11 @@ const joinGame = async (client, contract, setContract) => {
   );
   localStorage.setItem('contract', contract);
   setContract(contract);
+};
+
+const leaveGame = async (setContract) => {
+  setContract(null);
+  localStorage.removeItem('contract');
 };
 
 const playHandsign = async (client, contract, handsign) => {

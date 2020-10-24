@@ -3,7 +3,7 @@ use cosmwasm_std::{
     StdError, StdResult, Storage,
 };
 
-use crate::msg::{InitMsg, HandleMsg, QueryMsg, Handsign, StatusResponse};
+use crate::msg::{HandleMsg, Handsign, InitMsg, QueryMsg, StatusResponse};
 use crate::state::{config, config_read, State};
 
 pub fn init<S: Storage, A: Api, Q: Querier>(
@@ -31,7 +31,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
     msg: HandleMsg,
 ) -> StdResult<HandleResponse> {
     match msg {
-        HandleMsg::JoinGame { } => join_game(deps, env),
+        HandleMsg::JoinGame {} => join_game(deps, env),
         HandleMsg::PlayHand { handsign } => play_hand(deps, env, handsign),
     }
 }
@@ -104,10 +104,9 @@ pub fn query<S: Storage, A: Api, Q: Querier>(
     msg: QueryMsg,
 ) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetOutcome { } => to_binary(&query_count(deps, msg)?),
+        QueryMsg::GetOutcome {} => to_binary(&query_count(deps, msg)?),
     }
 }
-
 
 fn query_count<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
@@ -117,7 +116,9 @@ fn query_count<S: Storage, A: Api, Q: Querier>(
     return Ok(StatusResponse {
         player1_wins: state.player1_wins,
         player2_wins: state.player2_wins,
-    })
+        player1_played: !state.player1_handsign.is_none(),
+        player2_played: !state.player2_handsign.is_none(),
+    });
 }
 
 #[cfg(test)]
@@ -148,14 +149,18 @@ mod tests {
         let _res = handle(&mut deps, env, msg).unwrap();
 
         let env = mock_env("player1", &coins(1000, "token"));
-        let msg = HandleMsg::PlayHand {handsign: Handsign::ROCK};
+        let msg = HandleMsg::PlayHand {
+            handsign: Handsign::ROCK,
+        };
         let _res = handle(&mut deps, env, msg).unwrap();
 
         let env = mock_env("player2", &coins(2, "token"));
-        let msg = HandleMsg::PlayHand {handsign: Handsign::PAPER};
+        let msg = HandleMsg::PlayHand {
+            handsign: Handsign::PAPER,
+        };
         let _res = handle(&mut deps, env, msg).unwrap();
 
-        let res = query(&deps, QueryMsg::GetOutcome{}).unwrap();
+        let res = query(&deps, QueryMsg::GetOutcome {}).unwrap();
         let value: StatusResponse = from_binary(&res).unwrap();
         assert_eq!(0, value.player1_wins);
         assert_eq!(1, value.player2_wins);
@@ -165,7 +170,7 @@ mod tests {
     fn only_two_players() {
         let mut deps = mock_dependencies(20, &[]);
         let env = mock_env("creator", &coins(1000, "earth"));
-        let msg = InitMsg{};
+        let msg = InitMsg {};
         let _res = init(&mut deps, env, msg).unwrap();
 
         let env = mock_env("player2", &coins(2, "token"));
