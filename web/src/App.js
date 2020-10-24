@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button, Input } from '@material-ui/core';
 import * as SecretJS from 'secretjs';
 import * as bip39 from 'bip39';
+import { useInterval } from './utils';
 
 function App() {
   const [client, setClient] = useState(null);
@@ -10,14 +11,6 @@ function App() {
   const [gameStatus, setGameStatus] = useState(null);
   const [address, setAddress] = useState(null);
   const [account, setAccount] = useState(null);
-  useEffect(() => {
-    if (!client || !contract) return;
-    client
-      .queryContractSmart(contract, {
-        get_outcome: {},
-      })
-      .then((gs) => setGameStatus(gs));
-  }, [client, contract]);
   useEffect(() => {
     if (!client) return;
     client
@@ -28,6 +21,14 @@ function App() {
     initClient(setClient, setAddress);
     setContract(localStorage.getItem('contract'));
   }, []);
+  useInterval(() => {
+    if (!client || !contract) return;
+    client
+      .queryContractSmart(contract, {
+        get_outcome: {},
+      })
+      .then((gs) => setGameStatus(gs));
+  }, 1000 * 2);
 
   return (
     <div>
