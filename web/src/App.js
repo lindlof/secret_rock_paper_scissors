@@ -8,6 +8,7 @@ function App() {
   const [client, setClient] = useState(null);
   const [contract, setContract] = useState(null);
   const [joinContract, setJoinContract] = useState(null);
+  const [gameLobby, setGameLobby] = useState(null);
   const [gameStatus, setGameStatus] = useState(null);
   const [address, setAddress] = useState(null);
   const [account, setAccount] = useState(null);
@@ -23,11 +24,15 @@ function App() {
   }, []);
   useInterval(() => {
     if (!client || !contract) return;
-    client
-      .queryContractSmart(contract, {
-        game_status: {},
-      })
-      .then((gs) => setGameStatus(gs));
+    if (!gameLobby || !gameLobby.player2_joined) {
+      client
+        .queryContractSmart(contract, { game_lobby: {} })
+        .then((gs) => setGameLobby(gs));
+    } else {
+      client
+        .queryContractSmart(contract, { game_status: {} })
+        .then((gs) => setGameStatus(gs));
+    }
   }, 1000 * 2);
 
   return (
@@ -56,46 +61,13 @@ function App() {
           >
             Leave game
           </Button>
-          {gameStatus ? (
-            <div>
-              <p>Player 1 wins: {gameStatus.player1_wins}</p>
-              <p>Player 2 wins: {gameStatus.player2_wins}</p>
-              <p>
-                {gameStatus.player1_played
-                  ? 'Player 1 played'
-                  : 'Waiting for Player 1'}
-              </p>
-              <p>
-                {gameStatus.player2_played
-                  ? 'Player 2 played'
-                  : 'Waiting for Player 2'}
-              </p>
-            </div>
-          ) : (
-            <p>Loading...</p>
+          {gameLobby && !gameLobby.player2_joined && (
+            <p>Waiting for Player 2 to join</p>
           )}
-
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => playHandsign(client, contract, 'ROCK')}
-          >
-            Rock
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => playHandsign(client, contract, 'PAPER')}
-          >
-            Paper
-          </Button>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => playHandsign(client, contract, 'SCISSORS')}
-          >
-            Scissors
-          </Button>
+          {gameStatus &&
+            gamePanel(gameStatus, (handsign) =>
+              playHandsign(client, contract, handsign),
+            )}
         </div>
       ) : (
         <div>
@@ -125,6 +97,47 @@ function App() {
     </div>
   );
 }
+
+const gamePanel = (gameStatus, playHandsign) => {
+  return (
+    <div>
+      <p>Player 1 wins: {gameStatus.player1_wins}</p>
+      <p>Player 2 wins: {gameStatus.player2_wins}</p>
+      <p>
+        {gameStatus.player1_played
+          ? 'Player 1 played'
+          : 'Waiting for Player 1 to play'}
+      </p>
+      <p>
+        {gameStatus.player2_played
+          ? 'Player 2 played'
+          : 'Waiting for Player 2 to play'}
+      </p>
+
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => playHandsign('ROCK')}
+      >
+        Rock
+      </Button>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => playHandsign('PAPER')}
+      >
+        Paper
+      </Button>
+      <Button
+        variant="contained"
+        color="primary"
+        onClick={() => playHandsign('SCISSORS')}
+      >
+        Scissors
+      </Button>
+    </div>
+  );
+};
 
 const instantiateGame = async (client, setContract) => {
   const result = await client.instantiate(

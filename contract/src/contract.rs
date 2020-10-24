@@ -3,7 +3,7 @@ use cosmwasm_std::{
     StdError, StdResult, Storage,
 };
 
-use crate::msg::{GameStatusResponse, HandleMsg, Handsign, InitMsg, QueryMsg};
+use crate::msg::{GameLobbyResponse, GameStatusResponse, HandleMsg, Handsign, InitMsg, QueryMsg};
 use crate::state::{config, config_read, State};
 
 pub fn init<S: Storage, A: Api, Q: Querier>(
@@ -104,8 +104,19 @@ pub fn query<S: Storage, A: Api, Q: Querier>(
     msg: QueryMsg,
 ) -> StdResult<Binary> {
     match msg {
+        QueryMsg::GameLobby {} => to_binary(&game_lobby(deps, msg)?),
         QueryMsg::GameStatus {} => to_binary(&game_status(deps, msg)?),
     }
+}
+
+fn game_lobby<S: Storage, A: Api, Q: Querier>(
+    deps: &Extern<S, A, Q>,
+    _msg: QueryMsg,
+) -> StdResult<GameLobbyResponse> {
+    let state = config_read(&deps.storage).load()?;
+    return Ok(GameLobbyResponse {
+        player2_joined: !state.player2.is_none(),
+    });
 }
 
 fn game_status<S: Storage, A: Api, Q: Querier>(
