@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
+import { Button, Input } from '@material-ui/core';
 import * as SecretJS from 'secretjs';
 import * as bip39 from 'bip39';
 
 function App() {
   const [client, setClient] = useState(null);
+  const [contract, setContract] = useState(null);
+  const [joinContract, setJoinContract] = useState(null);
   const [gameStatus, setGameStatus] = useState(null);
   const [account, setAccount] = useState(null);
   useEffect(() => {
@@ -12,11 +15,11 @@ function App() {
   useEffect(() => {
     if (!client) return;
     client
-      .queryContractSmart(process.env.REACT_APP_CONTRACT, {
+      .queryContractSmart(contract, {
         get_outcome: {},
       })
       .then((gs) => setGameStatus(gs));
-  }, [client]);
+  }, [contract]);
   useEffect(() => {
     if (!client) return;
     client
@@ -38,17 +41,101 @@ function App() {
         <p>Wallet not loaded</p>
       )}
 
-      {gameStatus ? (
+      {contract ? (
         <div>
-          <p>Player 1 wins: {gameStatus.player1_wins}</p>
-          <p>Player 2 wins: {gameStatus.player2_wins}</p>
+          <p>Game contract {contract}</p>
+          {gameStatus ? (
+            <div>
+              <p>Player 1 wins: {gameStatus.player1_wins}</p>
+              <p>Player 2 wins: {gameStatus.player2_wins}</p>
+            </div>
+          ) : (
+            <p>Loading...</p>
+          )}
+
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => playHandsign(client, contract, 'ROCK')}
+          >
+            Rock
+          </Button>
         </div>
       ) : (
-        <p>Loading...</p>
+        <div>
+          {joinContract ? (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => joinGame(client, joinContract, setContract)}
+            >
+              Join game
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => instantiateGame(client, setContract)}
+            >
+              Create game
+            </Button>
+          )}
+          <Input
+            placeholder="Join contract"
+            onChange={(t) => setJoinContract(t.target.value)}
+          />
+        </div>
       )}
     </div>
   );
 }
+
+const instantiateGame = async (client, setContract) => {
+  const result = await client.instantiate(
+    process.env.REACT_APP_CODE_ID,
+    {},
+    `Game ${Date.now()}`,
+  );
+  setContract(result.contractAddress);
+  console.log(result);
+};
+
+const joinGame = async (client, contract, setContract) => {
+  await client.execute(
+    contract,
+    {
+      join_game: {},
+    },
+    '',
+    [
+      {
+        amount: '10',
+        denom: 'uscrt',
+      },
+    ],
+  );
+  setContract(contract);
+};
+
+const playHandsign = async (client, contract, handsign) => {
+  try {
+    await client.execute(
+      contract,
+      {
+        play_hand: { handsign },
+      },
+      '',
+      [
+        {
+          amount: '10',
+          denom: 'uscrt',
+        },
+      ],
+    );
+  } catch (error) {
+    console.log(error);
+  }
+};
 
 const initClient = async () => {
   let mnemonic = localStorage.getItem('mnemonic');
