@@ -28,13 +28,13 @@ impl Handsign {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    GetOutcome {},
+    GameStatus {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
-pub struct StatusResponse {
-    pub player1_wins: u8,
-    pub player2_wins: u8,
+pub struct GameStatusResponse {
     pub player1_played: bool,
     pub player2_played: bool,
+    pub player1_wins: u8,
+    pub player2_wins: u8,
 }

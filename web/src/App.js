@@ -25,7 +25,7 @@ function App() {
     if (!client || !contract) return;
     client
       .queryContractSmart(contract, {
-        get_outcome: {},
+        game_status: {},
       })
       .then((gs) => setGameStatus(gs));
   }, 1000 * 2);

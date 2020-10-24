@@ -27,5 +27,5 @@ CONTRACT=`secretcli query compute list-contract-by-code $CODE | jq -r 'sort_by(.
 secretcli tx compute execute $CONTRACT "{\"join_game\": {}}" --from b --keyring-backend test
 secretcli tx compute execute $CONTRACT "{\"play_hand\": {\"handsign\": \"ROCK\"}}" --from a --keyring-backend test
 secretcli tx compute execute $CONTRACT "{\"play_hand\": {\"handsign\": \"PAPER\"}}" --from b --keyring-backend test
-secretcli query compute query $CONTRACT "{\"get_outcome\": {}}"
+secretcli query compute query $CONTRACT "{\"game_status\": {}}"
 ```

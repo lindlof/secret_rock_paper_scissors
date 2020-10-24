@@ -3,7 +3,7 @@ use cosmwasm_std::{
     StdError, StdResult, Storage,
 };
 
-use crate::msg::{HandleMsg, Handsign, InitMsg, QueryMsg, StatusResponse};
+use crate::msg::{GameStatusResponse, HandleMsg, Handsign, InitMsg, QueryMsg};
 use crate::state::{config, config_read, State};
 
 pub fn init<S: Storage, A: Api, Q: Querier>(
@@ -104,20 +104,20 @@ pub fn query<S: Storage, A: Api, Q: Querier>(
     msg: QueryMsg,
 ) -> StdResult<Binary> {
     match msg {
-        QueryMsg::GetOutcome {} => to_binary(&query_count(deps, msg)?),
+        QueryMsg::GameStatus {} => to_binary(&game_status(deps, msg)?),
     }
 }
 
-fn query_count<S: Storage, A: Api, Q: Querier>(
+fn game_status<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
     _msg: QueryMsg,
-) -> StdResult<StatusResponse> {
+) -> StdResult<GameStatusResponse> {
     let state = config_read(&deps.storage).load()?;
-    return Ok(StatusResponse {
-        player1_wins: state.player1_wins,
-        player2_wins: state.player2_wins,
+    return Ok(GameStatusResponse {
         player1_played: !state.player1_handsign.is_none(),
         player2_played: !state.player2_handsign.is_none(),
+        player1_wins: state.player1_wins,
+        player2_wins: state.player2_wins,
     });
 }
 
@@ -160,8 +160,8 @@ mod tests {
         };
         let _res = handle(&mut deps, env, msg).unwrap();
 
-        let res = query(&deps, QueryMsg::GetOutcome {}).unwrap();
-        let value: StatusResponse = from_binary(&res).unwrap();
+        let res = query(&deps, QueryMsg::GameStatus {}).unwrap();
+        let value: GameStatusResponse = from_binary(&res).unwrap();
         assert_eq!(0, value.player1_wins);
         assert_eq!(1, value.player2_wins);
     }
