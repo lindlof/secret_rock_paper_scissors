@@ -2,20 +2,19 @@ import React, { useEffect, useState } from 'react';
 import { Button, Input } from '@material-ui/core';
 import * as SecretJS from 'secretjs';
 import * as bip39 from 'bip39';
-import { useInterval, useStickyState } from './utils';
+import { useInterval, useLocalStorage } from './utils';
 import * as Msg from './msg';
 import Config from './config';
+import * as Game from './game';
 
 const config = Config();
 
 export const App: React.FC = () => {
   const [client, setClient] = useState<SecretJS.SigningCosmWasmClient | undefined>();
-  const [contract, setContract] = useStickyState(undefined, 'gameContract');
+  const [game, setGame] = useLocalStorage<Game.Game | undefined>('game', undefined);
   const [joinContract, setJoinContract] = useState<string | undefined>();
-  const [gameLobby, setGameLobby] = useState<Msg.GameLobbyResponse | undefined>();
-  const [gameStatus, setGameStatus] = useState<Msg.GameStatusResponse | undefined>();
-  const [address, setAddress] = useState();
   const [account, setAccount] = useState<SecretJS.Account | undefined>();
+  const [address, setAddress] = useState();
   useEffect(() => {
     if (!client) return;
     client.getAccount(client.senderAddress).then((account) => setAccount(account));
@@ -23,13 +22,9 @@ export const App: React.FC = () => {
   useEffect(() => {
     initClient(setClient, setAddress);
   }, []);
-  useInterval(() => {
-    if (!client || !contract) return;
-    if (!gameLobby?.player2_joined) {
-      client.queryContractSmart(contract, { game_lobby: {} }).then((gs) => setGameLobby(gs));
-    } else {
-      client.queryContractSmart(contract, { game_status: {} }).then((gs) => setGameStatus(gs));
-    }
+  useInterval(async () => {
+    if (!client || !game) return;
+    setGame(await Game.tick(client, game));
   }, 1000 * 2);
 
   return (
@@ -45,17 +40,17 @@ export const App: React.FC = () => {
         <p>Wallet not loaded</p>
       )}
 
-      {contract ? (
+      {game ? (
         <div>
-          <p>Game contract {contract}</p>
-          <Button variant="contained" color="primary" onClick={() => leaveGame(setContract)}>
+          <p>Game contract {game.contract}</p>
+          <Button variant="contained" color="primary" onClick={() => leaveGame(setGame)}>
             Leave game
           </Button>
-          {gameLobby && !gameLobby.player2_joined && <p>Waiting for Player 2 to join</p>}
+          {game?.status === Game.Status.NOT_STARTED && <p>Waiting for Player 2 to join</p>}
           {client &&
-            gameStatus &&
-            gamePanel(gameStatus, (handsign: Msg.Handsign) =>
-              playHandsign(client, contract, handsign),
+            game?.status === Game.Status.GAME_ON &&
+            gamePanel(game, (handsign: Msg.Handsign) =>
+              playHandsign(client, game.contract, handsign),
             )}
         </div>
       ) : (
@@ -65,7 +60,7 @@ export const App: React.FC = () => {
               <Button
                 variant="contained"
                 color="primary"
-                onClick={() => joinGame(client, joinContract, setContract)}
+                onClick={() => joinGame(client, joinContract, setGame)}
               >
                 Join game
               </Button>
@@ -73,7 +68,7 @@ export const App: React.FC = () => {
               <Button
                 variant="contained"
                 color="primary"
-                onClick={() => instantiateGame(client, config.codeId, setContract)}
+                onClick={() => instantiateGame(client, config.codeId, setGame)}
               >
                 Create game
               </Button>
@@ -86,23 +81,26 @@ export const App: React.FC = () => {
   );
 };
 
-const gamePanel = (gameStatus: Msg.GameStatusResponse, playHandsign: Function) => {
+const gamePanel = (game: Game.Game, playHandsign: Function) => {
   return (
     <div>
-      <p>Player 1 wins: {gameStatus.player1_wins}</p>
-      <p>Player 2 wins: {gameStatus.player2_wins}</p>
-      <p>{gameStatus.player1_played ? 'Player 1 played' : 'Waiting for Player 1 to play'}</p>
-      <p>{gameStatus.player2_played ? 'Player 2 played' : 'Waiting for Player 2 to play'}</p>
-
-      <Button variant="contained" color="primary" onClick={() => playHandsign('ROCK')}>
-        Rock
-      </Button>
-      <Button variant="contained" color="primary" onClick={() => playHandsign('PAPER')}>
-        Paper
-      </Button>
-      <Button variant="contained" color="primary" onClick={() => playHandsign('SCISSORS')}>
-        Scissors
-      </Button>
+      <p>Wins: {game.wins}</p>
+      <p>Losses: {game.losses}</p>
+      {game.played ? (
+        <p>{game.opponenPlayed ? 'Opponent played' : 'Waiting for opponent to play'}</p>
+      ) : (
+        <div>
+          <Button variant="contained" color="primary" onClick={() => playHandsign('ROCK')}>
+            Rock
+          </Button>
+          <Button variant="contained" color="primary" onClick={() => playHandsign('PAPER')}>
+            Paper
+          </Button>
+          <Button variant="contained" color="primary" onClick={() => playHandsign('SCISSORS')}>
+            Scissors
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
@@ -110,16 +108,16 @@ const gamePanel = (gameStatus: Msg.GameStatusResponse, playHandsign: Function) =
 const instantiateGame = async (
   client: SecretJS.SigningCosmWasmClient,
   codeId: number,
-  setContract: Function,
+  setGame: Function,
 ) => {
   const result = await client.instantiate(codeId, {}, `Game ${Date.now()}`);
-  setContract(result.contractAddress);
+  setGame(Game.create(result.contractAddress, true));
 };
 
 const joinGame = async (
   client: SecretJS.SigningCosmWasmClient,
   contract: string,
-  setContract: Function,
+  setGame: Function,
 ) => {
   await client.execute(
     contract,
@@ -134,12 +132,11 @@ const joinGame = async (
       },
     ],
   );
-  setContract(contract);
+  setGame(Game.create(contract, false));
 };
 
-const leaveGame = async (setContract: Function) => {
-  setContract(null);
-  localStorage.removeItem('contract');
+const leaveGame = async (setGame: Function) => {
+  setGame(null);
 };
 
 const playHandsign = async (
