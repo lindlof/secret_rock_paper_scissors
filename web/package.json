@@ -13,9 +13,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
-    "deploy": "./script/deploy.sh",
-    "fund": "./script/fund.sh"
+    "test": "react-scripts test"
   },
   "eslintConfig": {
     "extends": "react-app"

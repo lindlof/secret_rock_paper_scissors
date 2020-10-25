@@ -16,7 +16,15 @@ Unit tests:
 cargo unit-test
 ```
 
-Interacting with docker-compose contract:
+## Local deployment
+
+Compile optimized contract:
+
+```
+docker-compose -f docker-optimize.yaml up --build
+```
+
+Interacting with local contract:
 
 ```
 docker exec -it srps_dev /bin/bash

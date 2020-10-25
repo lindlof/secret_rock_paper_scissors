@@ -7,24 +7,17 @@ Rock paper scissors game for Secret Network.
 Run dev node:
 
 ```
-docker-compose up --build
+./main.sh node
 ```
 
-Compile optimized contract:
+Deploy and interact with contract:
 
 ```
-docker-compose -f docker-optimize.yaml up --build
-```
-
-Interact with contract:
-
-```
-cd web
-npm run deploy
+./main.sh react
 ```
 
 Fund wallet address:
 
 ```
-npm run fund <address>
+./main.sh fund <address>
 ```
