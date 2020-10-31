@@ -6,6 +6,7 @@ import { useInterval, useLocalStorage } from './utils';
 import * as Msg from './msg';
 import Config from './config';
 import * as Game from './game';
+import GamePlaying from './GamePlaying';
 
 const config = Config();
 
@@ -47,11 +48,14 @@ export const App: React.FC = () => {
             Leave game
           </Button>
           {game?.status === Game.Status.NOT_STARTED && <p>Waiting for Player 2 to join</p>}
-          {client &&
-            game?.status === Game.Status.GAME_ON &&
-            gamePanel(game, (handsign: Msg.Handsign) =>
-              playHandsign(client, game.contract, handsign),
-            )}
+          {client && game?.status === Game.Status.GAME_ON && (
+            <GamePlaying
+              game={game}
+              playHandsign={(handsign: Msg.Handsign) =>
+                playHandsign(client, game.contract, handsign)
+              }
+            />
+          )}
         </div>
       ) : (
         client && (
@@ -76,30 +80,6 @@ export const App: React.FC = () => {
             <Input placeholder="Join contract" onChange={(t) => setJoinContract(t.target.value)} />
           </div>
         )
-      )}
-    </div>
-  );
-};
-
-const gamePanel = (game: Game.Game, playHandsign: Function) => {
-  return (
-    <div>
-      <p>Wins: {game.wins}</p>
-      <p>Losses: {game.losses}</p>
-      {game.played ? (
-        <p>{game.opponenPlayed ? 'Opponent played' : 'Waiting for opponent to play'}</p>
-      ) : (
-        <div>
-          <Button variant="contained" color="primary" onClick={() => playHandsign('ROCK')}>
-            Rock
-          </Button>
-          <Button variant="contained" color="primary" onClick={() => playHandsign('PAPER')}>
-            Paper
-          </Button>
-          <Button variant="contained" color="primary" onClick={() => playHandsign('SCISSORS')}>
-            Scissors
-          </Button>
-        </div>
       )}
     </div>
   );
