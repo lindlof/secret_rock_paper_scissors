@@ -35,7 +35,7 @@ export default (props: Props) => {
             {game.played ? (
               game.lastHandsign && <Handsign handsign={game.lastHandsign} />
             ) : (
-              <Grid container justify="center" alignItems="center">
+              <Grid container justify="center" alignItems="center" spacing={3}>
                 <Grid item sm={4}>
                   <Handsign
                     handsign={Msg.Handsign.Rock}
