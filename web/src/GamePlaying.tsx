@@ -31,7 +31,9 @@ export default (props: Props) => {
         <Grid item xs={6}>
           <Paper className={classes.paper}>
             <p>Your score {game.wins}</p>
-            {!game.played && (
+            {game.played ? (
+              <p>{game.lastHandsign}</p>
+            ) : (
               <div>
                 <Button variant="contained" color="primary" onClick={() => playHandsign('ROCK')}>
                   Rock

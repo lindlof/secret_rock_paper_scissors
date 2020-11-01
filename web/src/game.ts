@@ -1,4 +1,5 @@
 import * as SecretJS from 'secretjs';
+import * as Msg from './msg';
 
 interface Game_ {
   readonly contract: string;
@@ -8,6 +9,7 @@ interface Game_ {
   readonly losses: number;
   readonly played: boolean;
   readonly opponenPlayed: boolean;
+  readonly lastHandsign: Msg.Handsign | undefined;
 }
 
 enum Status {
@@ -25,6 +27,7 @@ const create = (contract: string, creator: boolean): Game => {
     losses: 0,
     played: false,
     opponenPlayed: false,
+    lastHandsign: undefined,
   };
 };
 
@@ -37,14 +40,38 @@ const tick = async (client: SecretJS.SigningCosmWasmClient, game: Game): Promise
 
   const status = await client.queryContractSmart(game.contract, { game_status: {} });
 
+  if (game.creator) {
+    return {
+      ...game,
+      wins: status.player1_wins,
+      losses: status.player2_wins,
+      played: status.player1_played,
+      lastHandsign: status.player1_played ? game.lastHandsign : undefined,
+      opponenPlayed: status.player2_played,
+    };
+  } else {
+    return {
+      ...game,
+      wins: status.player2_wins,
+      losses: status.player1_wins,
+      played: status.player2_played,
+      lastHandsign: status.player2_played ? game.lastHandsign : undefined,
+      opponenPlayed: status.player1_played,
+    };
+  }
+};
+
+const playHandsign = async (
+  client: SecretJS.SigningCosmWasmClient,
+  game: Game,
+  handsign: Msg.Handsign,
+) => {
+  await client.execute(game.contract, { play_hand: { handsign } });
   return {
     ...game,
-    wins: game.creator ? status.player1_wins : status.player2_wins,
-    losses: game.creator ? status.player2_wins : status.player1_wins,
-    played: game.creator ? status.player1_played : status.player2_played,
-    opponenPlayed: game.creator ? status.player2_played : status.player1_played,
+    lastHandsign: handsign,
   };
 };
 
 export type Game = Game_;
-export { Status, create, tick };
+export { Status, create, tick, playHandsign };

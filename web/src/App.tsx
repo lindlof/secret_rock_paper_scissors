@@ -53,7 +53,7 @@ export const App: React.FC = () => {
             <GamePlaying
               game={game}
               playHandsign={(handsign: Msg.Handsign) =>
-                playHandsign(client, game.contract, handsign)
+                playHandsign(client, game, handsign, setGame, enqueueSnackbar)
               }
             />
           )}
@@ -111,25 +111,15 @@ const leaveGame = async (setGame: Function) => {
 
 const playHandsign = async (
   client: SecretJS.SigningCosmWasmClient,
-  contract: string,
+  game: Game.Game,
   handsign: Msg.Handsign,
+  setGame: Function,
+  enqueueSnackbar: Function,
 ) => {
   try {
-    await client.execute(
-      contract,
-      {
-        play_hand: { handsign },
-      },
-      '',
-      [
-        {
-          amount: '10',
-          denom: 'uscrt',
-        },
-      ],
-    );
+    setGame(await Game.playHandsign(client, game, handsign));
   } catch (error) {
-    console.log(error);
+    enqueueSnackbar('Secret error', { variant: 'error' });
   }
 };
 
