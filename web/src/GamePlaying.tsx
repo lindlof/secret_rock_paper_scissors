@@ -1,8 +1,9 @@
 import React from 'react';
 import { makeStyles } from '@material-ui/core/styles';
-import { Button } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
+import Handsign from './components/Handsign';
+import * as Msg from './msg';
 import * as Game from './game';
 
 const useStyles = makeStyles((theme) => ({
@@ -32,23 +33,28 @@ export default (props: Props) => {
           <Paper className={classes.paper}>
             <p>Your score {game.wins}</p>
             {game.played ? (
-              <p>{game.lastHandsign}</p>
+              game.lastHandsign && <Handsign handsign={game.lastHandsign} />
             ) : (
-              <div>
-                <Button variant="contained" color="primary" onClick={() => playHandsign('ROCK')}>
-                  Rock
-                </Button>
-                <Button variant="contained" color="primary" onClick={() => playHandsign('PAPER')}>
-                  Paper
-                </Button>
-                <Button
-                  variant="contained"
-                  color="primary"
-                  onClick={() => playHandsign('SCISSORS')}
-                >
-                  Scissors
-                </Button>
-              </div>
+              <Grid container justify="center" alignItems="center">
+                <Grid item sm={4}>
+                  <Handsign
+                    handsign={Msg.Handsign.Rock}
+                    onClick={() => playHandsign(Msg.Handsign.Rock)}
+                  />
+                </Grid>
+                <Grid item sm={4}>
+                  <Handsign
+                    handsign={Msg.Handsign.Paper}
+                    onClick={() => playHandsign(Msg.Handsign.Paper)}
+                  />
+                </Grid>
+                <Grid item sm={4}>
+                  <Handsign
+                    handsign={Msg.Handsign.Scissors}
+                    onClick={() => playHandsign(Msg.Handsign.Scissors)}
+                  />
+                </Grid>
+              </Grid>
             )}
           </Paper>
         </Grid>
