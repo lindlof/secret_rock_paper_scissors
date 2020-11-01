@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Button, Input } from '@material-ui/core';
+import { Button } from '@material-ui/core';
 import * as SecretJS from 'secretjs';
 import * as bip39 from 'bip39';
 import { useInterval, useLocalStorage } from './utils';
@@ -13,7 +13,6 @@ const config = Config();
 export const App: React.FC = () => {
   const [client, setClient] = useState<SecretJS.SigningCosmWasmClient | undefined>();
   const [game, setGame] = useLocalStorage<Game.Game | undefined>('game', undefined);
-  const [joinContract, setJoinContract] = useState<string | undefined>();
   const [account, setAccount] = useState<SecretJS.Account | undefined>();
   const [address, setAddress] = useState();
   useEffect(() => {
@@ -60,24 +59,13 @@ export const App: React.FC = () => {
       ) : (
         client && (
           <div>
-            {joinContract ? (
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => joinGame(client, joinContract, setGame)}
-              >
-                Join game
-              </Button>
-            ) : (
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => instantiateGame(client, config.codeId, setGame)}
-              >
-                Create game
-              </Button>
-            )}
-            <Input placeholder="Join contract" onChange={(t) => setJoinContract(t.target.value)} />
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => playGame(client, config.codeId, setGame)}
+            >
+              Play
+            </Button>
           </div>
         )
       )}
@@ -85,35 +73,29 @@ export const App: React.FC = () => {
   );
 };
 
-const instantiateGame = async (
+const playGame = async (
   client: SecretJS.SigningCosmWasmClient,
   codeId: number,
   setGame: Function,
 ) => {
+  for await (let lobby of findLobbies(client, codeId)) {
+    await client.execute(lobby.address, { join_game: {} }, '', [{ amount: '10', denom: 'uscrt' }]);
+    setGame(Game.create(lobby.address, false));
+    return;
+  }
   const result = await client.instantiate(codeId, {}, `Game ${Date.now()}`);
   setGame(Game.create(result.contractAddress, true));
 };
 
-const joinGame = async (
-  client: SecretJS.SigningCosmWasmClient,
-  contract: string,
-  setGame: Function,
-) => {
-  await client.execute(
-    contract,
-    {
-      join_game: {},
-    },
-    '',
-    [
-      {
-        amount: '10',
-        denom: 'uscrt',
-      },
-    ],
-  );
-  setGame(Game.create(contract, false));
-};
+async function* findLobbies(client: SecretJS.SigningCosmWasmClient, codeId: number) {
+  const contracts = await client.getContracts(codeId);
+  for (let contract of Array.from(contracts).reverse()) {
+    const lobby = await client.queryContractSmart(contract.address, { game_lobby: {} });
+    if (!lobby.player2_joined) {
+      yield contract;
+    }
+  }
+}
 
 const leaveGame = async (setGame: Function) => {
   setGame(null);
