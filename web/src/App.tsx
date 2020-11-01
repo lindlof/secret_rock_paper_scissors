@@ -7,6 +7,7 @@ import * as Msg from './msg';
 import Config from './config';
 import * as Game from './game';
 import GamePlaying from './GamePlaying';
+import { useSnackbar } from 'notistack';
 
 const config = Config();
 
@@ -15,6 +16,7 @@ export const App: React.FC = () => {
   const [game, setGame] = useLocalStorage<Game.Game | undefined>('game', undefined);
   const [account, setAccount] = useState<SecretJS.Account | undefined>();
   const [address, setAddress] = useState();
+  const { enqueueSnackbar } = useSnackbar();
   useEffect(() => {
     if (!client) return;
     client.getAccount(client.senderAddress).then((account) => setAccount(account));
@@ -62,7 +64,7 @@ export const App: React.FC = () => {
             <Button
               variant="contained"
               color="primary"
-              onClick={() => playGame(client, config.codeId, setGame)}
+              onClick={() => playGame(client, config.codeId, setGame, enqueueSnackbar)}
             >
               Play
             </Button>
@@ -77,14 +79,20 @@ const playGame = async (
   client: SecretJS.SigningCosmWasmClient,
   codeId: number,
   setGame: Function,
+  enqueueSnackbar: Function,
 ) => {
-  for await (let lobby of findLobbies(client, codeId)) {
-    await client.execute(lobby.address, { join_game: {} }, '', [{ amount: '10', denom: 'uscrt' }]);
-    setGame(Game.create(lobby.address, false));
+  try {
+    for await (let lobby of findLobbies(client, codeId)) {
+      await client.execute(lobby.address, { join_game: {} });
+      setGame(Game.create(lobby.address, false));
+      return;
+    }
+    const result = await client.instantiate(codeId, {}, `Game ${Date.now()}`);
+    setGame(Game.create(result.contractAddress, true));
+  } catch {
+    enqueueSnackbar('Fail. Try funding wallet?', { variant: 'error' });
     return;
   }
-  const result = await client.instantiate(codeId, {}, `Game ${Date.now()}`);
-  setGame(Game.create(result.contractAddress, true));
 };
 
 async function* findLobbies(client: SecretJS.SigningCosmWasmClient, codeId: number) {
