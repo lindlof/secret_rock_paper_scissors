@@ -14,12 +14,20 @@ const config = Config();
 export const App: React.FC = () => {
   const [client, setClient] = useState<SecretJS.SigningCosmWasmClient | undefined>();
   const [game, setGame] = useLocalStorage<Game.Game | undefined>('game', undefined);
-  const [account, setAccount] = useState<SecretJS.Account | undefined>();
+  const [balance, setBalance] = useState<number | undefined>();
   const [address, setAddress] = useState();
   const { enqueueSnackbar } = useSnackbar();
   useEffect(() => {
     if (!client) return;
-    client.getAccount(client.senderAddress).then((account) => setAccount(account));
+    client.getAccount(client.senderAddress).then((account) => {
+      if (!account) return;
+      for (let balance of account.balance) {
+        if (balance.denom === 'uscrt') {
+          setBalance(parseFloat(balance.amount) / 1000000);
+          return;
+        }
+      }
+    });
   }, [client]);
   useEffect(() => {
     initClient(setClient, setAddress);
@@ -34,9 +42,7 @@ export const App: React.FC = () => {
       {address ? (
         <div>
           <p>Wallet address: {address}</p>
-          <p>
-            Wallet balance: {account ? account.balance[0].amount + account.balance[0].denom : ''}
-          </p>
+          <p>Wallet balance: {balance} SCRT</p>
         </div>
       ) : (
         <p>Wallet not loaded</p>
