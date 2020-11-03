@@ -1,8 +1,9 @@
 use cosmwasm_std::{
-    to_binary, Api, Binary, Env, Extern, HandleResponse, HumanAddr, InitResponse, Querier,
-    StdError, StdResult, Storage,
+    to_binary, Api, BankMsg, Binary, Coin, CosmosMsg, Env, Extern, HandleResponse, HumanAddr,
+    InitResponse, Querier, StdError, StdResult, Storage, Uint128,
 };
 
+use crate::conf::{FUNDING_AMOUNT, FUNDING_DENOM, WINS_TO_FINISH};
 use crate::msg::{GameLobbyResponse, GameStatusResponse, HandleMsg, Handsign, InitMsg, QueryMsg};
 use crate::state::{config, config_read, State};
 
@@ -11,6 +12,18 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
     env: Env,
     _msg: InitMsg,
 ) -> StdResult<InitResponse> {
+    match deps.querier.query_balance(env.contract.address, "uscrt") {
+        Ok(coin) => {
+            if coin.amount < Uint128(FUNDING_AMOUNT) {
+                return Err(StdError::generic_err(
+                    "insufficient_funds 100000 uscrt required",
+                ));
+            }
+        }
+        Err(_) => {
+            return Err(StdError::generic_err("error querying balance"));
+        }
+    }
     let state = State {
         player1: env.message.sender.clone(),
         player1_handsign: None,
@@ -41,7 +54,12 @@ pub fn play_hand<S: Storage, A: Api, Q: Querier>(
     env: Env,
     handsign: Handsign,
 ) -> StdResult<HandleResponse> {
+    let mut pay_address = None;
     config(&mut deps.storage).update(|mut state| {
+        if state.player1_wins >= WINS_TO_FINISH || state.player2_wins >= WINS_TO_FINISH {
+            return Err(StdError::generic_err("game_finished"));
+        }
+
         let player2: &HumanAddr;
         match &state.player2 {
             None => return Err(StdError::generic_err("Second player needs to join first")),
@@ -78,8 +96,23 @@ pub fn play_hand<S: Storage, A: Api, Q: Querier>(
         } else {
             return Err(StdError::generic_err("You are not a player"));
         }
+        if state.player1_wins == WINS_TO_FINISH {
+            pay_address = Some(state.player1.clone());
+        } else if state.player2_wins == WINS_TO_FINISH {
+            pay_address = Some(player2.clone());
+        }
         Ok(state)
     })?;
+    match pay_address {
+        None => {}
+        Some(address) => {
+            return Ok(pay(
+                env.contract.address,
+                address,
+                Uint128(FUNDING_AMOUNT * 2),
+            ))
+        }
+    };
 
     Ok(HandleResponse::default())
 }
@@ -88,6 +121,12 @@ pub fn join_game<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
 ) -> StdResult<HandleResponse> {
+    let funds = &env.message.sent_funds[0];
+    if funds.denom != FUNDING_DENOM || funds.amount < Uint128(FUNDING_AMOUNT) {
+        return Err(StdError::generic_err(
+            "insufficient_funds 100000 uscrt required",
+        ));
+    }
     config(&mut deps.storage).update(|mut state| {
         if !state.player2.is_none() {
             return Err(StdError::generic_err("Game full mate"));
@@ -132,6 +171,21 @@ fn game_status<S: Storage, A: Api, Q: Querier>(
     });
 }
 
+pub fn pay(contract_address: HumanAddr, player: HumanAddr, amount: Uint128) -> HandleResponse {
+    HandleResponse {
+        messages: vec![CosmosMsg::Bank(BankMsg::Send {
+            from_address: contract_address,
+            to_address: player,
+            amount: vec![Coin {
+                denom: "uscrt".to_string(),
+                amount,
+            }],
+        })],
+        log: vec![],
+        data: None,
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -140,8 +194,8 @@ mod tests {
 
     #[test]
     fn proper_initialization() {
-        let mut deps = mock_dependencies(20, &[]);
-        let env = mock_env("creator", &coins(1000, "earth"));
+        let mut deps = mock_dependencies(20, &coins(1_000_000, "uscrt"));
+        let env = mock_env("creator", &[]);
         let msg = InitMsg {};
 
         let res = init(&mut deps, env, msg).unwrap();
@@ -150,12 +204,12 @@ mod tests {
 
     #[test]
     fn play() {
-        let mut deps = mock_dependencies(20, &[]);
-        let env = mock_env("player1", &coins(1000, "token"));
+        let mut deps = mock_dependencies(20, &coins(1_000_000, "uscrt"));
+        let env = mock_env("player1", &[]);
         let msg = InitMsg {};
         let _res = init(&mut deps, env, msg).unwrap();
 
-        let env = mock_env("player2", &coins(2, "token"));
+        let env = mock_env("player2", &coins(1_000_000, "uscrt"));
         let msg = HandleMsg::JoinGame {};
         let _res = handle(&mut deps, env, msg).unwrap();
 
@@ -179,16 +233,16 @@ mod tests {
 
     #[test]
     fn only_two_players() {
-        let mut deps = mock_dependencies(20, &[]);
-        let env = mock_env("creator", &coins(1000, "earth"));
+        let mut deps = mock_dependencies(20, &coins(1_000_000, "uscrt"));
+        let env = mock_env("creator", &[]);
         let msg = InitMsg {};
         let _res = init(&mut deps, env, msg).unwrap();
 
-        let env = mock_env("player2", &coins(2, "token"));
+        let env = mock_env("player2", &coins(1_000_000, "uscrt"));
         let msg = HandleMsg::JoinGame {};
         let _res = handle(&mut deps, env, msg).unwrap();
 
-        let env = mock_env("player3", &coins(2, "token"));
+        let env = mock_env("player3", &coins(1_000_000, "uscrt"));
         let msg = HandleMsg::JoinGame {};
         let res = handle(&mut deps, env, msg);
         assert_eq!(Err(StdError::generic_err("Game full mate")), res);

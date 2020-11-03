@@ -54,8 +54,9 @@ export const App: React.FC = () => {
           <Button variant="contained" color="primary" onClick={() => leaveGame(setGame)}>
             Leave game
           </Button>
-          {game?.status === Game.Status.NOT_STARTED && <p>Waiting for Player 2 to join</p>}
-          {client && game?.status === Game.Status.GAME_ON && (
+          {game?.stage === Game.Stage.NOT_STARTED && <p>Waiting for Player 2 to join</p>}
+          {game.stage === Game.Stage.ENDED && <p>You {game.won ? 'won' : 'lost'}</p>}
+          {client && game?.stage === Game.Stage.GAME_ON && (
             <GamePlaying
               game={game}
               playHandsign={(handsign: Msg.Handsign) =>
@@ -89,14 +90,25 @@ const playGame = async (
 ) => {
   try {
     for await (let lobby of findLobbies(client, codeId)) {
-      await client.execute(lobby.address, { join_game: {} });
+      await client.execute(lobby.address, { join_game: {} }, undefined, [
+        {
+          amount: '1000000',
+          denom: 'uscrt',
+        },
+      ]);
       setGame(Game.create(lobby.address, false));
       return;
     }
-    const result = await client.instantiate(codeId, {}, `Game ${Date.now()}`);
+    const result = await client.instantiate(codeId, {}, `Game ${Date.now()}`, undefined, [
+      {
+        amount: '1000000',
+        denom: 'uscrt',
+      },
+    ]);
     setGame(Game.create(result.contractAddress, true));
-  } catch {
+  } catch (e) {
     enqueueSnackbar('Fail. Try funding wallet?', { variant: 'error' });
+    console.log('playGame error', e);
     return;
   }
 };
