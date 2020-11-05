@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  web:
+    stdin_open: true
+    build:
+      context: .
+    environment:
+      - 'REACT_APP_CODE_ID=${REACT_APP_CODE_ID}'
+    ports:
+      - '3000:3000'
+    volumes:
+      - '/app/node_modules'
+      - './:/app'

@@ -7,4 +7,4 @@ CODE=`secretcli query compute list-code | jq -r 'sort_by(.id)[] | [.id] | @tsv' 
 echo Code: $CODE
 
 cd web
-REACT_APP_CODE_ID=$CODE npm start
+REACT_APP_CODE_ID=$CODE docker-compose up --build
