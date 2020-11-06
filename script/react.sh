@@ -1,9 +1,11 @@
+set -e
 docker-compose -f docker-optimize.yaml up --build
 
 alias secretcli="docker exec -it srps_dev secretcli"
-secretcli tx compute store code/contract.wasm.gz --from a --gas auto --gas-adjustment 2 -y --keyring-backend test
-sleep 5s
-CODE=`secretcli query compute list-code | jq -r 'sort_by(.id)[] | [.id] | @tsv' | tail -1`
+CODE=$(
+secretcli tx compute store code/contract.wasm.gz --from a --gas 10000000 -y --keyring-backend test -b block |
+    jq -r '.logs[].events[].attributes[] | select(.key == "code_id") | .value'
+)
 echo Code: $CODE
 
 cd web
