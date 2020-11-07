@@ -42,7 +42,7 @@ export default (props: Props) => {
         <Typography variant="h5" color="textPrimary">
           Wallet
         </Typography>
-        {account ? (
+        {client ? (
           <span>
             <Typography
               variant="body2"
@@ -50,10 +50,10 @@ export default (props: Props) => {
               component="p"
               className={classes.address}
             >
-              {account.address}
+              {client.senderAddress}
             </Typography>
             <Typography variant="body1" color="textPrimary" component="p">
-              {getScrtBalance(account.balance)} SCRT
+              {account ? getScrtBalance(account.balance) : 0} SCRT
             </Typography>
           </span>
         ) : (
