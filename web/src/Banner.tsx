@@ -10,7 +10,7 @@ const useStyles = makeStyles((theme) => ({
   },
   secret: {
     textAlign: 'center',
-    letterSpacing: '1rem',
+    letterSpacing: '2rem',
   },
   rps: {
     textAlign: 'center',
@@ -23,10 +23,12 @@ export default () => {
 
   return (
     <div className={classes.root}>
-      <Typography variant="h2" color="textPrimary" className={classes.secret}>
-        S·E·C·R·E·T
-      </Typography>
-      <Grid container spacing={3}>
+      <Grid container>
+        <Grid item xs={12}>
+          <Typography variant="h4" color="textPrimary" className={classes.secret}>
+            SECRET
+          </Typography>
+        </Grid>
         <Grid item xs={7}>
           <Typography variant="h4" color="textPrimary" className={classes.rps}>
             Rock Paper Scissors
