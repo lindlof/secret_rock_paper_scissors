@@ -43,8 +43,7 @@ export const App: React.FC = () => {
             Leave game
           </Button>
           {game?.stage === Game.Stage.NOT_STARTED && <p>Waiting for Player 2 to join</p>}
-          {game.stage === Game.Stage.ENDED && <p>You {game.won ? 'won' : 'lost'}</p>}
-          {client && game?.stage === Game.Stage.GAME_ON && (
+          {client && game?.stage !== Game.Stage.NOT_STARTED && (
             <GamePlaying
               game={game}
               playHandsign={(handsign: Msg.Handsign) =>

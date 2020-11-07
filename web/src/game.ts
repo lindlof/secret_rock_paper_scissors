@@ -9,7 +9,7 @@ interface Game_ {
   readonly wins: number;
   readonly losses: number;
   readonly played: boolean;
-  readonly opponenPlayed: boolean;
+  readonly opponentPlayed: boolean;
   readonly lastHandsign: Msg.Handsign | undefined;
 }
 
@@ -28,7 +28,7 @@ const create = (contract: string, creator: boolean): Game => {
     wins: 0,
     losses: 0,
     played: false,
-    opponenPlayed: false,
+    opponentPlayed: false,
     lastHandsign: undefined,
   };
 };
@@ -52,7 +52,7 @@ const tick = async (client: SecretJS.SigningCosmWasmClient, game: Game): Promise
       losses: status.player2_wins,
       played: status.player1_played,
       lastHandsign: status.player1_played ? game.lastHandsign : undefined,
-      opponenPlayed: status.player2_played,
+      opponentPlayed: status.player2_played,
     };
   } else {
     return {
@@ -63,7 +63,7 @@ const tick = async (client: SecretJS.SigningCosmWasmClient, game: Game): Promise
       losses: status.player1_wins,
       played: status.player2_played,
       lastHandsign: status.player2_played ? game.lastHandsign : undefined,
-      opponenPlayed: status.player1_played,
+      opponentPlayed: status.player1_played,
     };
   }
 };
