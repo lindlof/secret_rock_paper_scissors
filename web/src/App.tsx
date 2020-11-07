@@ -8,29 +8,16 @@ import Config from './config';
 import * as Game from './game';
 import GamePlaying from './GamePlaying';
 import { useSnackbar } from 'notistack';
+import Wallet from './Wallet';
 
 const config = Config();
 
 export const App: React.FC = () => {
   const [client, setClient] = useState<SecretJS.SigningCosmWasmClient | undefined>();
   const [game, setGame] = useLocalStorage<Game.Game | undefined>('game', undefined);
-  const [balance, setBalance] = useState<number | undefined>();
-  const [address, setAddress] = useState();
   const { enqueueSnackbar } = useSnackbar();
   useEffect(() => {
-    if (!client) return;
-    client.getAccount(client.senderAddress).then((account) => {
-      if (!account) return;
-      for (let balance of account.balance) {
-        if (balance.denom === 'uscrt') {
-          setBalance(parseFloat(balance.amount) / 1000000);
-          return;
-        }
-      }
-    });
-  }, [client]);
-  useEffect(() => {
-    initClient(setClient, setAddress);
+    initClient(setClient);
   }, []);
   useInterval(async () => {
     if (!client || !game) return;
@@ -39,15 +26,7 @@ export const App: React.FC = () => {
 
   return (
     <div>
-      {address ? (
-        <div>
-          <p>Wallet address: {address}</p>
-          <p>Wallet balance: {balance} SCRT</p>
-        </div>
-      ) : (
-        <p>Wallet not loaded</p>
-      )}
-
+      <Wallet client={client} />
       {game ? (
         <div>
           <p>Game contract {game.contract}</p>
@@ -141,7 +120,7 @@ const playHandsign = async (
   }
 };
 
-const initClient = async (setClient: Function, setAddress: Function) => {
+const initClient = async (setClient: Function) => {
   let mnemonic = localStorage.getItem('mnemonic');
   if (!mnemonic) {
     mnemonic = bip39.generateMnemonic();
@@ -162,7 +141,6 @@ const initClient = async (setClient: Function, setAddress: Function) => {
     SecretJS.encodeSecp256k1Pubkey(signingPen.pubkey),
     'secret',
   );
-  setAddress(walletAddress);
 
   const secretJsClient = new SecretJS.SigningCosmWasmClient(
     'http://localhost:1338',
