@@ -9,6 +9,8 @@ import * as Game from './game';
 import GamePlaying from './GamePlaying';
 import { useSnackbar } from 'notistack';
 import Wallet from './Wallet';
+import Banner from './Banner';
+import Grid from '@material-ui/core/Grid';
 
 const config = Config();
 
@@ -26,7 +28,14 @@ export const App: React.FC = () => {
 
   return (
     <div>
-      <Wallet client={client} />
+      <Grid container spacing={3} alignItems="flex-end">
+        <Grid item xs={12} sm={8}>
+          <Banner />
+        </Grid>
+        <Grid item xs={12} sm={4}>
+          <Wallet client={client} />
+        </Grid>
+      </Grid>
       {game ? (
         <div>
           <p>Game contract {game.contract}</p>
