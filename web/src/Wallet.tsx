@@ -65,8 +65,12 @@ export default (props: Props) => {
 };
 
 const getAccount = async (client: SecretJS.SigningCosmWasmClient, setAccount: Function) => {
-  const account = await client.getAccount(client.senderAddress);
-  setAccount(account);
+  try {
+    const account = await client.getAccount(client.senderAddress);
+    setAccount(account);
+  } catch (e) {
+    setAccount(undefined);
+  }
 };
 
 const getScrtBalance = (balances: readonly SecretJS.types.Coin[]): number => {
