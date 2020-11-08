@@ -11,12 +11,13 @@ import { useSnackbar } from 'notistack';
 import Wallet from './Wallet';
 import Banner from './Banner';
 import Grid from '@material-ui/core/Grid';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 const config = Config();
 
 export const App: React.FC = () => {
   const [client, setClient] = useState<SecretJS.SigningCosmWasmClient | undefined>();
-  const [game, setGame] = useLocalStorage<Game.Game | undefined>('game', undefined);
+  const [game, setGame] = useLocalStorage<Game.Game | null | undefined>('game', undefined);
   const { enqueueSnackbar } = useSnackbar();
   useEffect(() => {
     initClient(setClient);
@@ -36,7 +37,7 @@ export const App: React.FC = () => {
           <Wallet client={client} />
         </Grid>
       </Grid>
-      {game ? (
+      {game && (
         <div>
           <p>Game contract {game.contract}</p>
           <Button variant="contained" color="primary" onClick={() => leaveGame(setGame)}>
@@ -52,18 +53,18 @@ export const App: React.FC = () => {
             />
           )}
         </div>
-      ) : (
-        client && (
-          <div>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => playGame(client, config.codeId, setGame, enqueueSnackbar)}
-            >
-              Play
-            </Button>
-          </div>
-        )
+      )}
+      {game === null && <CircularProgress />}
+      {game === undefined && client && (
+        <div>
+          <Button
+            variant="contained"
+            color="primary"
+            onClick={() => playGame(client, config.codeId, setGame, enqueueSnackbar)}
+          >
+            Play
+          </Button>
+        </div>
       )}
     </div>
   );
@@ -75,6 +76,7 @@ const playGame = async (
   setGame: Function,
   enqueueSnackbar: Function,
 ) => {
+  setGame(null);
   try {
     for await (let lobby of findLobbies(client, codeId)) {
       await client.execute(lobby.address, { join_game: {} }, undefined, [
@@ -94,6 +96,7 @@ const playGame = async (
     ]);
     setGame(Game.create(result.contractAddress, true));
   } catch (e) {
+    setGame(undefined);
     enqueueSnackbar('Fail. Try funding wallet?', { variant: 'error' });
     console.log('playGame error', e);
     return;
