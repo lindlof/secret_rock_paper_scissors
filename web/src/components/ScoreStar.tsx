@@ -20,7 +20,6 @@ export default (props: Props) => {
   const classes = useStyles();
   const { pos, score, className } = props;
   const cls = clsx(className, classes.star);
-  console.log(classes);
 
   return <img src={pos < score ? starGold : starBlank} alt={'star blank'} className={cls} />;
 };
