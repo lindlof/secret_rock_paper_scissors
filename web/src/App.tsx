@@ -42,8 +42,8 @@ export const App: React.FC = () => {
           <Button variant="contained" color="primary" onClick={() => leaveGame(setGame)}>
             Leave game
           </Button>
-          {game?.stage === Game.Stage.NOT_STARTED && <p>Waiting for Player 2 to join</p>}
-          {client && game?.stage !== Game.Stage.NOT_STARTED && (
+          {game?.stage === Game.Stage.Lobby && <p>Waiting for Player 2 to join</p>}
+          {client && game?.stage !== Game.Stage.Lobby && (
             <GamePlaying
               game={game}
               playHandsign={(handsign: Msg.Handsign) =>
@@ -111,7 +111,7 @@ async function* findLobbies(client: SecretJS.SigningCosmWasmClient, codeId: numb
 }
 
 const leaveGame = async (setGame: Function) => {
-  setGame(null);
+  setGame(undefined);
 };
 
 const playHandsign = async (

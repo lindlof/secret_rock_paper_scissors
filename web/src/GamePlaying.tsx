@@ -54,7 +54,7 @@ export default (props: Props) => {
   if (game.played) {
     displayContent = DisplayContent.SelectedHandsign;
   }
-  if (game.stage === Game.Stage.ENDED) {
+  if (game.stage === Game.Stage.Over) {
     displayContent = DisplayContent.Ending;
   }
 
@@ -105,8 +105,8 @@ export default (props: Props) => {
               <ScoreStar pos={1} score={game.losses} className={classes.star} />
               <ScoreStar pos={2} score={game.losses} className={classes.star} />
             </div>
-            {game.stage === Game.Stage.ENDED && <p>Game over</p>}
-            {game.stage === Game.Stage.GAME_ON &&
+            {game.stage === Game.Stage.Over && <p>Game over</p>}
+            {game.stage === Game.Stage.GameOn &&
               (game.opponentPlayed ? <p>Opponent played</p> : <p>Waiting for opponent to play</p>)}
           </Paper>
         </Grid>

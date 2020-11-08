@@ -14,16 +14,16 @@ interface Game_ {
 }
 
 enum Stage {
-  NOT_STARTED = 'NOT_STARTED',
-  GAME_ON = 'GAME_ON',
-  ENDED = 'ENDED',
+  Lobby = 'LOBBY',
+  GameOn = 'GAME_ON',
+  Over = 'OVER',
 }
 
 const create = (contract: string, creator: boolean): Game => {
   return {
     contract,
     creator,
-    stage: Stage.NOT_STARTED,
+    stage: Stage.Lobby,
     won: false,
     wins: 0,
     losses: 0,
@@ -34,14 +34,14 @@ const create = (contract: string, creator: boolean): Game => {
 };
 
 const tick = async (client: SecretJS.SigningCosmWasmClient, game: Game): Promise<Game> => {
-  if (game.stage === Stage.NOT_STARTED) {
+  if (game.stage === Stage.Lobby) {
     const lobby = await client.queryContractSmart(game.contract, { game_lobby: {} });
     if (!lobby.player2_joined) return game;
-    return { ...game, stage: Stage.GAME_ON };
+    return { ...game, stage: Stage.GameOn };
   }
 
   const status = await client.queryContractSmart(game.contract, { game_status: {} });
-  const stage = status.player1_wins >= 3 || status.player2_wins >= 3 ? Stage.ENDED : Stage.GAME_ON;
+  const stage = status.player1_wins >= 3 || status.player2_wins >= 3 ? Stage.Over : Stage.GameOn;
 
   if (game.creator) {
     return {
