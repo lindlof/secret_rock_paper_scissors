@@ -76,7 +76,7 @@ const playGame = async (
   setGame: Function,
   enqueueSnackbar: Function,
 ) => {
-  setGame(null);
+  setGame(null, false);
   try {
     for await (let lobby of findLobbies(client, codeId)) {
       await client.execute(lobby.address, { join_game: {} }, undefined, [
