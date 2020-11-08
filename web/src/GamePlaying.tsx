@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
@@ -6,6 +6,7 @@ import Handsign from './components/Handsign';
 import * as Msg from './msg';
 import * as Game from './game';
 import ScoreStar from './components/ScoreStar';
+import CircularProgress from '@material-ui/core/CircularProgress';
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -33,14 +34,23 @@ interface Props {
 enum DisplayContent {
   PickHandsign,
   SelectedHandsign,
+  Loading,
   Ending,
 }
 
 export default (props: Props) => {
   const classes = useStyles();
   const { game, playHandsign } = props;
+  const [pickedRound, setPickedRound] = useState<number>();
+  const pickHandsign = (handsign: Msg.Handsign) => {
+    setPickedRound(game.wins + game.losses);
+    playHandsign(handsign);
+  };
 
   let displayContent: DisplayContent = DisplayContent.PickHandsign;
+  if (pickedRound === game.wins + game.losses) {
+    displayContent = DisplayContent.Loading;
+  }
   if (game.played) {
     displayContent = DisplayContent.SelectedHandsign;
   }
@@ -59,6 +69,7 @@ export default (props: Props) => {
               <ScoreStar pos={2} score={game.wins} className={classes.star} />
             </div>
 
+            {displayContent === DisplayContent.Loading && <CircularProgress />}
             {displayContent === DisplayContent.SelectedHandsign && game.lastHandsign && (
               <Handsign handsign={game.lastHandsign} />
             )}
@@ -68,19 +79,19 @@ export default (props: Props) => {
                 <Grid item sm={4}>
                   <Handsign
                     handsign={Msg.Handsign.Rock}
-                    onClick={() => playHandsign(Msg.Handsign.Rock)}
+                    onClick={() => pickHandsign(Msg.Handsign.Rock)}
                   />
                 </Grid>
                 <Grid item sm={4}>
                   <Handsign
                     handsign={Msg.Handsign.Paper}
-                    onClick={() => playHandsign(Msg.Handsign.Paper)}
+                    onClick={() => pickHandsign(Msg.Handsign.Paper)}
                   />
                 </Grid>
                 <Grid item sm={4}>
                   <Handsign
                     handsign={Msg.Handsign.Scissors}
-                    onClick={() => playHandsign(Msg.Handsign.Scissors)}
+                    onClick={() => pickHandsign(Msg.Handsign.Scissors)}
                   />
                 </Grid>
               </Grid>
