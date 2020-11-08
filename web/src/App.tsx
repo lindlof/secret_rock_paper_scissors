@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@material-ui/core';
 import * as SecretJS from 'secretjs';
 import * as bip39 from 'bip39';
-import { useInterval, useLocalStorage } from './utils';
+import { useLocalStorage } from './utils';
 import * as Msg from './msg';
 import Config from './config';
 import * as Game from './game';
@@ -12,6 +12,7 @@ import Wallet from './Wallet';
 import Banner from './Banner';
 import Grid from '@material-ui/core/Grid';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import GameTicker from './components/GameTicker';
 
 const config = Config();
 
@@ -22,10 +23,6 @@ export const App: React.FC = () => {
   useEffect(() => {
     initClient(setClient);
   }, []);
-  useInterval(async () => {
-    if (!client || !game) return;
-    setGame(await Game.tick(client, game));
-  }, 1000 * 2);
 
   return (
     <div>
@@ -37,14 +34,14 @@ export const App: React.FC = () => {
           <Wallet client={client} />
         </Grid>
       </Grid>
-      {game && (
-        <div>
+      {client && game && (
+        <GameTicker client={client} game={game} setGame={setGame}>
           <p>Game contract {game.contract}</p>
           <Button variant="contained" color="primary" onClick={() => leaveGame(setGame)}>
             Leave game
           </Button>
           {game?.stage === Game.Stage.Lobby && <p>Waiting for Player 2 to join</p>}
-          {client && game?.stage !== Game.Stage.Lobby && (
+          {game?.stage !== Game.Stage.Lobby && (
             <GamePlaying
               game={game}
               playHandsign={(handsign: Msg.Handsign) =>
@@ -52,7 +49,7 @@ export const App: React.FC = () => {
               }
             />
           )}
-        </div>
+        </GameTicker>
       )}
       {game === null && <CircularProgress />}
       {game === undefined && client && (
