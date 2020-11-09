@@ -28,12 +28,12 @@ Interacting with local contract:
 
 ```
 docker exec -it srps_dev /bin/bash
-secretcli tx compute store code/contract.wasm.gz --from a --gas auto --gas-adjustment 2 -y --keyring-backend test
-CODE=`secretcli query compute list-code | jq -r 'sort_by(.id)[] | [.id] | @tsv' | tail -1`; echo $CODE
-secretcli tx compute instantiate $CODE "{}" --from a --label "srps $CODE" -y --keyring-backend test
-CONTRACT=`secretcli query compute list-contract-by-code $CODE | jq -r 'sort_by(.code_id)[] | [.address] | @tsv'`; echo $CONTRACT
-secretcli tx compute execute $CONTRACT "{\"join_game\": {}}" --from b --keyring-backend test
-secretcli tx compute execute $CONTRACT "{\"play_hand\": {\"handsign\": \"ROCK\"}}" --from a --keyring-backend test
-secretcli tx compute execute $CONTRACT "{\"play_hand\": {\"handsign\": \"PAPER\"}}" --from b --keyring-backend test
-secretcli query compute query $CONTRACT "{\"game_status\": {}}"
+CODE=$(secretcli tx compute store code/contract.wasm.gz --from a --gas 10000000 -y --keyring-backend test -b block |
+       jq -r '.logs[].events[].attributes[] | select(.key == "code_id") | .value'); echo Code $CODE
+CONT=$(secretcli tx compute instantiate "$CODE" "{}" --from a --amount 1000000uscrt --label "$(date)" -y -b block |
+       jq -r '.logs[].events[].attributes[] | select(.key == "contract_address") | .value'); echo Cont $CONT
+secretcli tx compute execute $CONT "{\"join_game\": {}}" --from b --amount 1000000uscrt -y --keyring-backend test -b block
+secretcli tx compute execute $CONT "{\"play_hand\": {\"handsign\": \"ROCK\"}}" --from a -y --keyring-backend test -b block
+secretcli tx compute execute $CONT "{\"play_hand\": {\"handsign\": \"PAPER\"}}" --from b -y --keyring-backend test -b block
+secretcli query compute query $CONT "{\"game_status\": {}}"
 ```
