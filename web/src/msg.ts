@@ -8,6 +8,7 @@ export interface GameStatusResponse {
   player1_wins: number;
   player2_wins: number;
   deadline: number;
+  game_over: boolean;
 }
 
 export enum Handsign {

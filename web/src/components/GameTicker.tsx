@@ -25,7 +25,7 @@ export default (props: React.PropsWithChildren<Props>) => {
   useEffect(() => {
     if (!game || !tickGame) return;
     setGame(tickGame);
-  }, [tickGame]);
+  }, [tickGame, game, setGame]);
 
   return <div>{children}</div>;
 };

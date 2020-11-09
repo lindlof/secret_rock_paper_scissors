@@ -32,6 +32,7 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
         player2_handsign: None,
         player2_wins: 0,
         last_play_height: 0,
+        game_over: false,
     };
 
     config(&mut deps.storage).save(&state)?;
@@ -47,7 +48,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
     match msg {
         HandleMsg::JoinGame {} => join_game(deps, env),
         HandleMsg::PlayHand { handsign } => play_hand(deps, env, handsign),
-        HandleMsg::Shutdown {} => shutdown(deps, env),
+        HandleMsg::ClaimInactivity {} => claim_inactivity(deps, env),
     }
 }
 
@@ -58,8 +59,8 @@ pub fn play_hand<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<HandleResponse> {
     let mut pay_address = None;
     config(&mut deps.storage).update(|mut state| {
-        if state.player1_wins >= WINS_TO_FINISH || state.player2_wins >= WINS_TO_FINISH {
-            return Err(StdError::generic_err("game_finished"));
+        if state.game_over {
+            return Err(StdError::generic_err("game_over"));
         }
 
         let player2: &HumanAddr;
@@ -101,8 +102,10 @@ pub fn play_hand<S: Storage, A: Api, Q: Querier>(
         state.last_play_height = env.block.height;
         if state.player1_wins == WINS_TO_FINISH {
             pay_address = Some(state.player1.clone());
+            state.game_over = true;
         } else if state.player2_wins == WINS_TO_FINISH {
             pay_address = Some(player2.clone());
+            state.game_over = true;
         }
         Ok(state)
     })?;
@@ -141,12 +144,46 @@ pub fn join_game<S: Storage, A: Api, Q: Querier>(
     Ok(HandleResponse::default())
 }
 
-pub fn shutdown<S: Storage, A: Api, Q: Querier>(
-    _deps: &mut Extern<S, A, Q>,
-    _env: Env,
+pub fn claim_inactivity<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    env: Env,
 ) -> StdResult<HandleResponse> {
-    //if env.block.height >= state.last_play_height + INACTIVE_BLOCKS_TO_DEFEAT {}
+    let mut pay_address = None;
+    config(&mut deps.storage).update(|mut state| {
+        if state.game_over {
+            return Err(StdError::generic_err("game_over"));
+        }
+        if env.block.height < state.last_play_height + PLAYER_DEADLINE_BLOCKS {
+            return Err(StdError::generic_err(
+                "under deadline for claiming inactivity",
+            ));
+        }
+        let player2: &HumanAddr;
+        match &state.player2 {
+            None => return Err(StdError::generic_err("Second player needs to join first")),
+            Some(p2) => player2 = p2,
+        }
+        if (env.message.sender == state.player1 && !state.player1_handsign.is_none())
+            || (env.message.sender == *player2 && !state.player2_handsign.is_none())
+        {
+            pay_address = Some(env.message.sender.clone());
+            state.game_over = true;
+        } else {
+            return Err(StdError::generic_err("unable to claim inactivity"));
+        }
+        Ok(state)
+    })?;
 
+    match pay_address {
+        None => {}
+        Some(address) => {
+            return Ok(pay(
+                env.contract.address,
+                address,
+                Uint128(FUNDING_AMOUNT * 2),
+            ))
+        }
+    };
     Ok(HandleResponse::default())
 }
 
@@ -181,6 +218,7 @@ fn game_status<S: Storage, A: Api, Q: Querier>(
         player1_wins: state.player1_wins,
         player2_wins: state.player2_wins,
         deadline: state.last_play_height + PLAYER_DEADLINE_BLOCKS,
+        game_over: state.game_over,
     });
 }
 

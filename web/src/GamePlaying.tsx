@@ -30,6 +30,7 @@ const useStyles = makeStyles((theme) => ({
 interface Props {
   game: Game.Game;
   playHandsign: Function;
+  claimInactivity: () => void;
 }
 
 enum DisplayContent {
@@ -41,7 +42,7 @@ enum DisplayContent {
 
 export default (props: Props) => {
   const classes = useStyles();
-  const { game, playHandsign } = props;
+  const { game, playHandsign, claimInactivity } = props;
   const [pickedRound, setPickedRound] = useState<number>();
   const pickHandsign = (handsign: Msg.Handsign) => {
     setPickedRound(game.wins + game.losses);
@@ -76,32 +77,34 @@ export default (props: Props) => {
             )}
             {displayContent === DisplayContent.Ending && <p>You {game.won ? 'won' : 'lost'}</p>}
             {displayContent === DisplayContent.PickHandsign && (
-              <Grid container justify="center" alignItems="center" spacing={3}>
-                <Grid item sm={4}>
-                  <Handsign
-                    handsign={Msg.Handsign.Rock}
-                    onClick={() => pickHandsign(Msg.Handsign.Rock)}
-                  />
+              <div>
+                <Grid container justify="center" alignItems="center" spacing={3}>
+                  <Grid item sm={4}>
+                    <Handsign
+                      handsign={Msg.Handsign.Rock}
+                      onClick={() => pickHandsign(Msg.Handsign.Rock)}
+                    />
+                  </Grid>
+                  <Grid item sm={4}>
+                    <Handsign
+                      handsign={Msg.Handsign.Paper}
+                      onClick={() => pickHandsign(Msg.Handsign.Paper)}
+                    />
+                  </Grid>
+                  <Grid item sm={4}>
+                    <Handsign
+                      handsign={Msg.Handsign.Scissors}
+                      onClick={() => pickHandsign(Msg.Handsign.Scissors)}
+                    />
+                  </Grid>
                 </Grid>
-                <Grid item sm={4}>
-                  <Handsign
-                    handsign={Msg.Handsign.Paper}
-                    onClick={() => pickHandsign(Msg.Handsign.Paper)}
-                  />
-                </Grid>
-                <Grid item sm={4}>
-                  <Handsign
-                    handsign={Msg.Handsign.Scissors}
-                    onClick={() => pickHandsign(Msg.Handsign.Scissors)}
-                  />
-                </Grid>
-              </Grid>
-            )}
-            {game.lossDeadlineSeconds !== undefined && game.lossDeadlineSeconds > 0 && (
-              <p>You have {game.lossDeadlineSeconds}s</p>
-            )}
-            {game.lossDeadlineSeconds !== undefined && game.lossDeadlineSeconds === 0 && (
-              <p>Play before opponent claims victory for inactivity</p>
+                {game.lossDeadlineSeconds !== undefined && game.lossDeadlineSeconds > 0 && (
+                  <p>You have {game.lossDeadlineSeconds}s</p>
+                )}
+                {game.lossDeadlineSeconds !== undefined && game.lossDeadlineSeconds === 0 && (
+                  <p>Play before opponent claims victory for inactivity</p>
+                )}
+              </div>
             )}
           </Paper>
         </Grid>
@@ -119,7 +122,7 @@ export default (props: Props) => {
               <p>They have {game.winDeadlineSeconds}s</p>
             )}
             {game.winDeadlineSeconds !== undefined && game.winDeadlineSeconds === 0 && (
-              <Button variant="contained" color="primary">
+              <Button variant="contained" color="primary" onClick={claimInactivity}>
                 Claim victory for inactivity
               </Button>
             )}

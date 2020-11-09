@@ -10,7 +10,7 @@ pub struct InitMsg {}
 pub enum HandleMsg {
     JoinGame {},
     PlayHand { handsign: Handsign },
-    Shutdown {},
+    ClaimInactivity {},
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, JsonSchema)]
@@ -45,4 +45,5 @@ pub struct GameStatusResponse {
     pub player1_wins: u8,
     pub player2_wins: u8,
     pub deadline: u64,
+    pub game_over: bool,
 }

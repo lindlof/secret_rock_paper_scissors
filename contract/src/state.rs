@@ -17,6 +17,7 @@ pub struct State {
     pub player2_handsign: Option<Handsign>,
     pub player2_wins: u8,
     pub last_play_height: u64,
+    pub game_over: bool,
 }
 
 pub fn config<S: Storage>(storage: &mut S) -> Singleton<S, State> {

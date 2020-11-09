@@ -47,6 +47,7 @@ export const App: React.FC = () => {
               playHandsign={(handsign: Msg.Handsign) =>
                 playHandsign(client, game, handsign, setGame, enqueueSnackbar)
               }
+              claimInactivity={() => claimInactivity(client, game, setGame, enqueueSnackbar)}
             />
           )}
         </GameTicker>
@@ -123,6 +124,19 @@ const playHandsign = async (
 ) => {
   try {
     setGame(await Game.playHandsign(client, game, handsign));
+  } catch (error) {
+    enqueueSnackbar('Secret error', { variant: 'error' });
+  }
+};
+
+const claimInactivity = async (
+  client: SecretJS.SigningCosmWasmClient,
+  game: Game.Game,
+  setGame: Function,
+  enqueueSnackbar: Function,
+) => {
+  try {
+    setGame(await Game.claimInactivity(client, game));
   } catch (error) {
     enqueueSnackbar('Secret error', { variant: 'error' });
   }

@@ -48,7 +48,7 @@ const tick = async (client: SecretJS.SigningCosmWasmClient, game: Game): Promise
   const status: Msg.GameStatusResponse = await client.queryContractSmart(game.contract, {
     game_status: {},
   });
-  const stage = status.player1_wins >= 3 || status.player2_wins >= 3 ? Stage.Over : Stage.GameOn;
+  const stage = status.game_over ? Stage.Over : Stage.GameOn;
   console.log('status.deadline', status.deadline, 'height', height);
   const deadlineSeconds = Math.max(0, (status.deadline - height) * 6);
   console.log('deadlineSeconds', deadlineSeconds);
@@ -98,5 +98,9 @@ const playHandsign = async (
   };
 };
 
+const claimInactivity = async (client: SecretJS.SigningCosmWasmClient, game: Game) => {
+  await client.execute(game.contract, { claim_inactivity: {} });
+};
+
 export type Game = Game_;
-export { Stage, create, tick, playHandsign };
+export { Stage, create, tick, playHandsign, claimInactivity };
