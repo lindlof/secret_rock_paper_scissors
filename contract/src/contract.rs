@@ -62,12 +62,17 @@ pub fn play_hand<S: Storage, A: Api, Q: Querier>(
         if state.game_over {
             return Err(StdError::generic_err("game_over"));
         }
-
         let player2: &HumanAddr;
         match &state.player2 {
             None => return Err(StdError::generic_err("Second player needs to join first")),
             Some(p2) => player2 = p2,
         }
+        if env.message.sender == state.player1 && !state.player1_handsign.is_none()
+            || env.message.sender == *player2 && !state.player2_handsign.is_none()
+        {
+            return Err(StdError::generic_err("already_played"));
+        }
+
         if env.message.sender == state.player1 {
             match state.player2_handsign {
                 None => {
