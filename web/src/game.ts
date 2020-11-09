@@ -49,9 +49,7 @@ const tick = async (client: SecretJS.SigningCosmWasmClient, game: Game): Promise
     game_status: {},
   });
   const stage = status.game_over ? Stage.Over : Stage.GameOn;
-  console.log('status.deadline', status.deadline, 'height', height);
   const deadlineSeconds = Math.max(0, (status.deadline - height) * 6);
-  console.log('deadlineSeconds', deadlineSeconds);
 
   if (game.creator) {
     return {
