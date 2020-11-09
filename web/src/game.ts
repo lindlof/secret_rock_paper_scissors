@@ -11,6 +11,8 @@ interface Game_ {
   readonly played: boolean;
   readonly opponentPlayed: boolean;
   readonly lastHandsign: Msg.Handsign | undefined;
+  readonly winDeadlineSeconds: number | undefined;
+  readonly lossDeadlineSeconds: number | undefined;
 }
 
 enum Stage {
@@ -30,6 +32,8 @@ const create = (contract: string, creator: boolean): Game => {
     played: false,
     opponentPlayed: false,
     lastHandsign: undefined,
+    winDeadlineSeconds: undefined,
+    lossDeadlineSeconds: undefined,
   };
 };
 
@@ -40,8 +44,14 @@ const tick = async (client: SecretJS.SigningCosmWasmClient, game: Game): Promise
     return { ...game, stage: Stage.GameOn };
   }
 
-  const status = await client.queryContractSmart(game.contract, { game_status: {} });
+  const height = await client.getHeight();
+  const status: Msg.GameStatusResponse = await client.queryContractSmart(game.contract, {
+    game_status: {},
+  });
   const stage = status.player1_wins >= 3 || status.player2_wins >= 3 ? Stage.Over : Stage.GameOn;
+  console.log('status.deadline', status.deadline, 'height', height);
+  const deadlineSeconds = Math.max(0, (status.deadline - height) * 6);
+  console.log('deadlineSeconds', deadlineSeconds);
 
   if (game.creator) {
     return {
@@ -53,6 +63,10 @@ const tick = async (client: SecretJS.SigningCosmWasmClient, game: Game): Promise
       played: status.player1_played,
       lastHandsign: status.player1_played ? game.lastHandsign : undefined,
       opponentPlayed: status.player2_played,
+      winDeadlineSeconds:
+        status.player1_played && !status.player2_played ? deadlineSeconds : undefined,
+      lossDeadlineSeconds:
+        !status.player1_played && status.player2_played ? deadlineSeconds : undefined,
     };
   } else {
     return {
@@ -64,6 +78,10 @@ const tick = async (client: SecretJS.SigningCosmWasmClient, game: Game): Promise
       played: status.player2_played,
       lastHandsign: status.player2_played ? game.lastHandsign : undefined,
       opponentPlayed: status.player1_played,
+      winDeadlineSeconds:
+        !status.player1_played && status.player2_played ? deadlineSeconds : undefined,
+      lossDeadlineSeconds:
+        status.player1_played && !status.player2_played ? deadlineSeconds : undefined,
     };
   }
 };

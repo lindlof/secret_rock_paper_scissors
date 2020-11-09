@@ -1,10 +1,10 @@
 use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
-use cosmwasm_std::{Storage, HumanAddr};
+use cosmwasm_std::{HumanAddr, Storage};
 use cosmwasm_storage::{singleton, singleton_read, ReadonlySingleton, Singleton};
 
-use crate::msg::{Handsign};
+use crate::msg::Handsign;
 
 pub static CONFIG_KEY: &[u8] = b"config";
 
@@ -16,6 +16,7 @@ pub struct State {
     pub player2: Option<HumanAddr>,
     pub player2_handsign: Option<Handsign>,
     pub player2_wins: u8,
+    pub last_play_height: u64,
 }
 
 pub fn config<S: Storage>(storage: &mut S) -> Singleton<S, State> {

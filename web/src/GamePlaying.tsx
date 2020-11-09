@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
+import { Button } from '@material-ui/core';
 import Handsign from './components/Handsign';
 import * as Msg from './msg';
 import * as Game from './game';
@@ -96,6 +97,12 @@ export default (props: Props) => {
                 </Grid>
               </Grid>
             )}
+            {game.lossDeadlineSeconds !== undefined && game.lossDeadlineSeconds > 0 && (
+              <p>You have {game.lossDeadlineSeconds}s</p>
+            )}
+            {game.lossDeadlineSeconds !== undefined && game.lossDeadlineSeconds === 0 && (
+              <p>Play before opponent claims victory for inactivity</p>
+            )}
           </Paper>
         </Grid>
         <Grid item xs={6}>
@@ -108,6 +115,14 @@ export default (props: Props) => {
             {game.stage === Game.Stage.Over && <p>Game over</p>}
             {game.stage === Game.Stage.GameOn &&
               (game.opponentPlayed ? <p>Opponent played</p> : <p>Waiting for opponent to play</p>)}
+            {game.winDeadlineSeconds !== undefined && game.winDeadlineSeconds > 0 && (
+              <p>They have {game.winDeadlineSeconds}s</p>
+            )}
+            {game.winDeadlineSeconds !== undefined && game.winDeadlineSeconds === 0 && (
+              <Button variant="contained" color="primary">
+                Claim victory for inactivity
+              </Button>
+            )}
           </Paper>
         </Grid>
       </Grid>

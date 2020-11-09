@@ -3,7 +3,7 @@ use cosmwasm_std::{
     InitResponse, Querier, StdError, StdResult, Storage, Uint128,
 };
 
-use crate::conf::{FUNDING_AMOUNT, FUNDING_DENOM, WINS_TO_FINISH};
+use crate::conf::{FUNDING_AMOUNT, FUNDING_DENOM, PLAYER_DEADLINE_BLOCKS, WINS_TO_FINISH};
 use crate::msg::{GameLobbyResponse, GameStatusResponse, HandleMsg, Handsign, InitMsg, QueryMsg};
 use crate::state::{config, config_read, State};
 
@@ -31,6 +31,7 @@ pub fn init<S: Storage, A: Api, Q: Querier>(
         player2: None,
         player2_handsign: None,
         player2_wins: 0,
+        last_play_height: 0,
     };
 
     config(&mut deps.storage).save(&state)?;
@@ -46,6 +47,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
     match msg {
         HandleMsg::JoinGame {} => join_game(deps, env),
         HandleMsg::PlayHand { handsign } => play_hand(deps, env, handsign),
+        HandleMsg::Shutdown {} => shutdown(deps, env),
     }
 }
 
@@ -96,6 +98,7 @@ pub fn play_hand<S: Storage, A: Api, Q: Querier>(
         } else {
             return Err(StdError::generic_err("You are not a player"));
         }
+        state.last_play_height = env.block.height;
         if state.player1_wins == WINS_TO_FINISH {
             pay_address = Some(state.player1.clone());
         } else if state.player2_wins == WINS_TO_FINISH {
@@ -138,6 +141,15 @@ pub fn join_game<S: Storage, A: Api, Q: Querier>(
     Ok(HandleResponse::default())
 }
 
+pub fn shutdown<S: Storage, A: Api, Q: Querier>(
+    _deps: &mut Extern<S, A, Q>,
+    _env: Env,
+) -> StdResult<HandleResponse> {
+    //if env.block.height >= state.last_play_height + INACTIVE_BLOCKS_TO_DEFEAT {}
+
+    Ok(HandleResponse::default())
+}
+
 pub fn query<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
     msg: QueryMsg,
@@ -168,6 +180,7 @@ fn game_status<S: Storage, A: Api, Q: Querier>(
         player2_played: !state.player2_handsign.is_none(),
         player1_wins: state.player1_wins,
         player2_wins: state.player2_wins,
+        deadline: state.last_play_height + PLAYER_DEADLINE_BLOCKS,
     });
 }
 
