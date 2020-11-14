@@ -47,8 +47,6 @@ pub fn play_hand<S: Storage, A: Api, Q: Querier>(
         return Err(StdError::generic_err("already_played"));
     }
 
-    println!("env.message.sender {}", env.message.sender);
-    println!("game.player1 {}", game.player1);
     if env.message.sender == game.player1 {
         match game.player2_handsign {
             None => {
@@ -92,7 +90,7 @@ pub fn play_hand<S: Storage, A: Api, Q: Querier>(
     match pay_address {
         None => {}
         Some(address) => {
-            return Ok(pay(
+            return Ok(payout(
                 env.contract.address,
                 address,
                 Uint128(FUNDING_AMOUNT * 2),
@@ -180,7 +178,7 @@ fn game_status<S: Storage, A: Api, Q: Querier>(
     });
 }
 
-pub fn pay(contract_address: HumanAddr, player: HumanAddr, amount: Uint128) -> HandleResponse {
+pub fn payout(contract_address: HumanAddr, player: HumanAddr, amount: Uint128) -> HandleResponse {
     HandleResponse {
         messages: vec![CosmosMsg::Bank(BankMsg::Send {
             from_address: contract_address,
@@ -215,7 +213,7 @@ mod tests {
     }
 
     #[test]
-    fn play() {
+    fn player_wins_round() {
         let mut deps = mock_dependencies(20, &coins(0, "uscrt"));
         let env = mock_env("creator", &[]);
         let msg = InitMsg {};
@@ -247,6 +245,63 @@ mod tests {
         let value: GameStatusResponse = from_binary(&res).unwrap();
         assert_eq!(0, value.player1_wins);
         assert_eq!(1, value.player2_wins);
+        assert_eq!(false, value.game_over);
+    }
+
+    #[test]
+    fn player_win_payout() {
+        let mut deps = mock_dependencies(20, &coins(0, "uscrt"));
+        let env = mock_env("creator", &[]);
+        let msg = InitMsg {};
+        let _res = init(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player1", &coins(1_000_000, "uscrt"));
+        let msg = HandleMsg::JoinGame { locator: loc(1) };
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player2", &coins(1_000_000, "uscrt"));
+        let msg = HandleMsg::JoinGame { locator: loc(2) };
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        for r in 0..WINS_TO_FINISH {
+            let env = mock_env("player1", &coins(1000, "token"));
+            let msg = HandleMsg::PlayHand {
+                locator: loc(1),
+                handsign: Handsign::ROCK,
+            };
+            let _res = handle(&mut deps, env, msg).unwrap();
+
+            let env = mock_env("player2", &coins(2, "token"));
+            let msg = HandleMsg::PlayHand {
+                locator: loc(2),
+                handsign: Handsign::PAPER,
+            };
+            let res = handle(&mut deps, env, msg).unwrap();
+            if r == WINS_TO_FINISH - 1 {
+                assert_eq!(res.messages.len(), 1);
+                match &res.messages[0] {
+                    CosmosMsg::Bank(BankMsg::Send {
+                        to_address, amount, ..
+                    }) => {
+                        assert_eq!(to_address.as_str(), "player2");
+                        assert_eq!(amount.len(), 1);
+                        assert_eq!(amount[0].denom, "uscrt");
+                        assert_eq!(amount[0].amount, Uint128(FUNDING_AMOUNT * 2));
+                    }
+                    _ => {
+                        panic!("Expected payout for winner");
+                    }
+                }
+            } else {
+                assert_eq!(res.messages.len(), 0);
+            }
+        }
+
+        let res = query(&deps, QueryMsg::GameStatus { locator: loc(1) }).unwrap();
+        let value: GameStatusResponse = from_binary(&res).unwrap();
+        assert_eq!(0, value.player1_wins);
+        assert_eq!(WINS_TO_FINISH, value.player2_wins);
+        assert_eq!(true, value.game_over);
     }
 
     #[test]
