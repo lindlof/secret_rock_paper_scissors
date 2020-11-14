@@ -24,7 +24,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
     match msg {
         HandleMsg::JoinGame { locator } => join_game(deps, env, locator),
         HandleMsg::PlayHand { locator, handsign } => play_hand(deps, env, locator, handsign),
-        HandleMsg::ClaimInactivity {} => claim_inactivity(deps, env),
+        HandleMsg::ClaimInactivity { locator } => claim_inactivity(deps, env, locator),
     }
 }
 
@@ -137,8 +137,33 @@ pub fn join_game<S: Storage, A: Api, Q: Querier>(
 pub fn claim_inactivity<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
+    locator: String,
 ) -> StdResult<HandleResponse> {
-    Ok(HandleResponse::default())
+    let locator = Locator::load(&deps.storage, Locator::id_from_string(locator))?;
+    let mut game = Game::load(&deps.storage, locator.game)?;
+
+    if game.game_over {
+        return Err(StdError::generic_err("game_over"));
+    }
+    if env.block.height < game.last_play_height + PLAYER_DEADLINE_BLOCKS {
+        return Err(StdError::generic_err(
+            "under deadline for claiming inactivity",
+        ));
+    }
+    if (env.message.sender == game.player1 && !game.player1_handsign.is_none())
+        || (env.message.sender == game.player2 && !game.player2_handsign.is_none())
+    {
+        game.game_over = true;
+        game.save(&mut deps.storage);
+
+        return Ok(payout(
+            env.contract.address,
+            env.message.sender,
+            Uint128(FUNDING_AMOUNT * 2),
+        ));
+    } else {
+        return Err(StdError::generic_err("unable to claim inactivity"));
+    }
 }
 
 pub fn query<S: Storage, A: Api, Q: Querier>(
@@ -204,7 +229,7 @@ mod tests {
 
     #[test]
     fn proper_initialization() {
-        let mut deps = mock_dependencies(20, &coins(1_000_000, "uscrt"));
+        let mut deps = mock_dependencies(20, &coins(0, "uscrt"));
         let env = mock_env("creator", &[]);
         let msg = InitMsg {};
 
@@ -219,11 +244,11 @@ mod tests {
         let msg = InitMsg {};
         let _res = init(&mut deps, env, msg).unwrap();
 
-        let env = mock_env("player1", &coins(1_000_000, "uscrt"));
+        let env = mock_env("player1", &coins(FUNDING_AMOUNT, "uscrt"));
         let msg = HandleMsg::JoinGame { locator: loc(1) };
         let _res = handle(&mut deps, env, msg).unwrap();
 
-        let env = mock_env("player2", &coins(1_000_000, "uscrt"));
+        let env = mock_env("player2", &coins(FUNDING_AMOUNT, "uscrt"));
         let msg = HandleMsg::JoinGame { locator: loc(2) };
         let _res = handle(&mut deps, env, msg).unwrap();
 
@@ -255,11 +280,11 @@ mod tests {
         let msg = InitMsg {};
         let _res = init(&mut deps, env, msg).unwrap();
 
-        let env = mock_env("player1", &coins(1_000_000, "uscrt"));
+        let env = mock_env("player1", &coins(FUNDING_AMOUNT, "uscrt"));
         let msg = HandleMsg::JoinGame { locator: loc(1) };
         let _res = handle(&mut deps, env, msg).unwrap();
 
-        let env = mock_env("player2", &coins(1_000_000, "uscrt"));
+        let env = mock_env("player2", &coins(FUNDING_AMOUNT, "uscrt"));
         let msg = HandleMsg::JoinGame { locator: loc(2) };
         let _res = handle(&mut deps, env, msg).unwrap();
 
@@ -311,15 +336,15 @@ mod tests {
         let msg = InitMsg {};
         let _res = init(&mut deps, env, msg).unwrap();
 
-        let env = mock_env("player1", &coins(1_000_000, "uscrt"));
+        let env = mock_env("player1", &coins(FUNDING_AMOUNT, "uscrt"));
         let msg = HandleMsg::JoinGame { locator: loc(1) };
         let _res = handle(&mut deps, env, msg).unwrap();
 
-        let env = mock_env("player2", &coins(1_000_000, "uscrt"));
+        let env = mock_env("player2", &coins(FUNDING_AMOUNT, "uscrt"));
         let msg = HandleMsg::JoinGame { locator: loc(2) };
         let _res = handle(&mut deps, env, msg).unwrap();
 
-        let env = mock_env("player3", &coins(1_000_000, "uscrt"));
+        let env = mock_env("player3", &coins(FUNDING_AMOUNT, "uscrt"));
         let msg = HandleMsg::JoinGame { locator: loc(3) };
         let _res = handle(&mut deps, env, msg);
 
@@ -337,5 +362,54 @@ mod tests {
         let res = query(&deps, msg).unwrap();
         let value: GameLobbyResponse = from_binary(&res).unwrap();
         assert_eq!(false, value.player2_joined);
+    }
+
+    #[test]
+    fn claim_opponent_inactivity() {
+        let mut deps = mock_dependencies(20, &coins(0, "uscrt"));
+        let env = mock_env("creator", &[]);
+        let msg = InitMsg {};
+        init(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player1", &coins(FUNDING_AMOUNT, "uscrt"));
+        let msg = HandleMsg::JoinGame { locator: loc(1) };
+        handle(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player2", &coins(FUNDING_AMOUNT, "uscrt"));
+        let msg = HandleMsg::JoinGame { locator: loc(2) };
+        handle(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player1", &coins(1000, "token"));
+        let msg = HandleMsg::PlayHand {
+            locator: loc(1),
+            handsign: Handsign::ROCK,
+        };
+        handle(&mut deps, env, msg).unwrap();
+
+        let mut env = mock_env("player1", &coins(1000, "token"));
+        env.block.height += PLAYER_DEADLINE_BLOCKS - 1;
+        let msg = HandleMsg::ClaimInactivity { locator: loc(1) };
+        handle(&mut deps, env, msg).unwrap_err();
+
+        let mut env = mock_env("player2", &coins(1000, "token"));
+        env.block.height += PLAYER_DEADLINE_BLOCKS;
+        let msg = HandleMsg::ClaimInactivity { locator: loc(1) };
+        handle(&mut deps, env, msg).unwrap_err();
+
+        let mut env = mock_env("someone", &coins(1000, "token"));
+        env.block.height += PLAYER_DEADLINE_BLOCKS;
+        let msg = HandleMsg::ClaimInactivity { locator: loc(1) };
+        handle(&mut deps, env, msg).unwrap_err();
+
+        let mut env = mock_env("player1", &coins(1000, "token"));
+        env.block.height += PLAYER_DEADLINE_BLOCKS;
+        let msg = HandleMsg::ClaimInactivity { locator: loc(1) };
+        handle(&mut deps, env, msg).unwrap();
+
+        // Can't double claim
+        let mut env = mock_env("player1", &coins(1000, "token"));
+        env.block.height += PLAYER_DEADLINE_BLOCKS;
+        let msg = HandleMsg::ClaimInactivity { locator: loc(1) };
+        handle(&mut deps, env, msg).unwrap_err();
     }
 }

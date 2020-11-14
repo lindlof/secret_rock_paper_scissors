@@ -10,7 +10,7 @@ pub struct InitMsg {}
 pub enum HandleMsg {
     JoinGame { locator: String },
     PlayHand { locator: String, handsign: Handsign },
-    ClaimInactivity {},
+    ClaimInactivity { locator: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, JsonSchema)]
