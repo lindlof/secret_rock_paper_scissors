@@ -53,6 +53,7 @@ pub fn lobby_game<S: Storage>(storage: &mut S) -> Singleton<S, Option<[u8; 32]>>
 pub struct Game {
     #[serde(skip)]
     id: [u8; 32],
+    pub round: u8,
     pub player1: HumanAddr,
     pub player1_handsign: Option<Handsign>,
     pub player1_wins: u8,
@@ -67,6 +68,7 @@ impl Game {
     pub fn new(id: [u8; 32], player1: HumanAddr, player2: HumanAddr) -> Game {
         Game {
             id: id,
+            round: 1,
             player1: player1,
             player1_handsign: None,
             player1_wins: 0,

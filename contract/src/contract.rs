@@ -59,6 +59,7 @@ pub fn play_hand<S: Storage, A: Api, Q: Querier>(
                 game.player1_handsign = Some(handsign);
             }
             Some(player2_handsign) => {
+                game.round += 1;
                 game.player2_handsign = None;
                 if handsign.beats(player2_handsign) {
                     game.player1_wins += 1;
@@ -73,6 +74,7 @@ pub fn play_hand<S: Storage, A: Api, Q: Querier>(
                 game.player2_handsign = Some(handsign);
             }
             Some(player1_handsign) => {
+                game.round += 1;
                 game.player1_handsign = None;
                 if handsign.beats(player1_handsign) {
                     game.player2_wins += 1;
@@ -226,6 +228,7 @@ fn game_status<S: Storage, A: Api, Q: Querier>(
     let locator = Locator::load(&deps.storage, bytes)?;
     let game = Game::load(&deps.storage, locator.game)?;
     return Ok(GameStatusResponse {
+        round: game.round,
         player1_played: !game.player1_handsign.is_none(),
         player2_played: !game.player2_handsign.is_none(),
         player1_wins: game.player1_wins,

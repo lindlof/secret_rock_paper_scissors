@@ -41,6 +41,7 @@ pub struct GameLobbyResponse {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct GameStatusResponse {
+    pub round: u8,
     pub player1_played: bool,
     pub player2_played: bool,
     pub player1_wins: u8,
