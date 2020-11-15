@@ -182,9 +182,16 @@ fn game_lobby<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<GameLobbyResponse> {
     let locator = Locator::load(&deps.storage, Locator::id_from_string(locator))?;
     let game = Game::may_load(&deps.storage, locator.game)?;
-    return Ok(GameLobbyResponse {
-        player2_joined: !game.is_none(),
-    });
+    match game {
+        None => Ok(GameLobbyResponse {
+            game_started: false,
+            player1_locator: false,
+        }),
+        Some(g) => Ok(GameLobbyResponse {
+            game_started: true,
+            player1_locator: locator.player == g.player1,
+        }),
+    }
 }
 
 fn game_status<S: Storage, A: Api, Q: Querier>(
@@ -351,17 +358,19 @@ mod tests {
         let msg = QueryMsg::GameLobby { locator: loc(1) };
         let res = query(&deps, msg).unwrap();
         let value: GameLobbyResponse = from_binary(&res).unwrap();
-        assert_eq!(true, value.player2_joined);
+        assert_eq!(true, value.game_started);
+        assert_eq!(true, value.player1_locator);
 
         let msg = QueryMsg::GameLobby { locator: loc(2) };
         let res = query(&deps, msg).unwrap();
         let value: GameLobbyResponse = from_binary(&res).unwrap();
-        assert_eq!(true, value.player2_joined);
+        assert_eq!(true, value.game_started);
+        assert_eq!(false, value.player1_locator);
 
         let msg = QueryMsg::GameLobby { locator: loc(3) };
         let res = query(&deps, msg).unwrap();
         let value: GameLobbyResponse = from_binary(&res).unwrap();
-        assert_eq!(false, value.player2_joined);
+        assert_eq!(false, value.game_started);
     }
 
     #[test]

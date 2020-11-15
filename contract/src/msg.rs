@@ -35,7 +35,8 @@ pub enum QueryMsg {
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct GameLobbyResponse {
-    pub player2_joined: bool,
+    pub game_started: bool,
+    pub player1_locator: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
