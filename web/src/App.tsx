@@ -78,7 +78,6 @@ const playGame = async (
 
   try {
     const game = Game.create(contract);
-    console.log('locator', game.locator);
     await client.execute(contract, { join_game: { locator: game.locator } }, undefined, [
       {
         amount: '1000000',
@@ -105,9 +104,11 @@ const playHandsign = async (
   setGame: Function,
   enqueueSnackbar: Function,
 ) => {
+  setGame((g: Game.Game) => ({ ...g, lastHandsign: handsign }));
   try {
-    setGame(await Game.playHandsign(client, game, handsign));
+    await Game.playHandsign(client, game, handsign);
   } catch (error) {
+    setGame((g: Game.Game) => ({ ...g, lastHandsign: undefined }));
     enqueueSnackbar('Secret error', { variant: 'error' });
   }
 };

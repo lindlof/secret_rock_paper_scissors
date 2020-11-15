@@ -45,12 +45,12 @@ export default (props: Props) => {
   const { game, playHandsign, claimInactivity } = props;
   const [pickedRound, setPickedRound] = useState<number>();
   const pickHandsign = (handsign: Msg.Handsign) => {
-    setPickedRound(game.wins + game.losses);
+    setPickedRound(game.round);
     playHandsign(handsign);
   };
 
   let displayContent: DisplayContent = DisplayContent.PickHandsign;
-  if (pickedRound === game.wins + game.losses) {
+  if (pickedRound === game.round) {
     displayContent = DisplayContent.Loading;
   }
   if (game.played) {

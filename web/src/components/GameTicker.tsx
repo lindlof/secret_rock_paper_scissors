@@ -10,22 +10,21 @@ interface Props {
 
 export default (props: React.PropsWithChildren<Props>) => {
   const { children, client, game, setGame } = props;
-  const [tickGame, setTickGame] = useState<Game.Game | undefined>();
 
   useEffect(() => {
     if (!client || !game) return;
     const timer = setInterval(async () => {
       const updatedGame = await Game.tick(client, game);
-      if (game) {
-        setTickGame(updatedGame);
-      }
+      if (updatedGame === undefined) return;
+      setGame((g: Game.Game) => {
+        console.log('updatedGame', updatedGame);
+        const thing = { ...g, ...updatedGame };
+        console.log('thing', thing);
+        return thing;
+      });
     }, 2000);
     return () => clearInterval(timer);
   });
-  useEffect(() => {
-    if (!game || !tickGame) return;
-    setGame(tickGame);
-  }, [tickGame, game, setGame]);
 
   return <div>{children}</div>;
 };
