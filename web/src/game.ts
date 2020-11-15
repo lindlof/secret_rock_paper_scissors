@@ -95,7 +95,7 @@ const playHandsign = async (
   game: Game,
   handsign: Msg.Handsign,
 ) => {
-  await client.execute(game.contract, { play_hand: { handsign } });
+  await client.execute(game.contract, { play_hand: { handsign, locator: game.locator } });
   return {
     ...game,
     lastHandsign: handsign,
@@ -103,7 +103,7 @@ const playHandsign = async (
 };
 
 const claimInactivity = async (client: SecretJS.SigningCosmWasmClient, game: Game) => {
-  await client.execute(game.contract, { claim_inactivity: {} });
+  await client.execute(game.contract, { claim_inactivity: { locator: game.locator } });
 };
 
 export type Game = Game_;
