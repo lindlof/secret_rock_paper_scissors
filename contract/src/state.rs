@@ -22,11 +22,6 @@ impl Locator {
             player: player,
         }
     }
-    pub fn id_from_string(id: String) -> [u8; 32] {
-        let mut bytes: [u8; 32] = Default::default();
-        bytes.copy_from_slice(&id.as_bytes()[0..32]);
-        bytes
-    }
 
     pub fn save<S: Storage>(&self, storage: &mut S) {
         let mut space = prefixed(b"lobby", storage);

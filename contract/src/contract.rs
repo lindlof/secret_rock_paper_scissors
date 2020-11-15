@@ -2,6 +2,7 @@ use cosmwasm_std::{
     to_binary, Api, BankMsg, Binary, Coin, CosmosMsg, Env, Extern, HandleResponse, HumanAddr,
     InitResponse, Querier, StdError, StdResult, Storage, Uint128,
 };
+extern crate hex;
 
 use crate::conf::{FUNDING_AMOUNT, FUNDING_DENOM, PLAYER_DEADLINE_BLOCKS, WINS_TO_FINISH};
 use crate::msg::{GameLobbyResponse, GameStatusResponse, HandleMsg, Handsign, InitMsg, QueryMsg};
@@ -34,7 +35,12 @@ pub fn play_hand<S: Storage, A: Api, Q: Querier>(
     locator: String,
     handsign: Handsign,
 ) -> StdResult<HandleResponse> {
-    let locator = Locator::load(&deps.storage, Locator::id_from_string(locator))?;
+    let mut bytes = [0u8; 32];
+    match hex::decode_to_slice(locator, &mut bytes as &mut [u8]) {
+        Err(_) => return Err(StdError::generic_err("bad_request invalid_locator")),
+        Ok(_) => (),
+    }
+    let locator = Locator::load(&deps.storage, bytes)?;
     let mut game = Game::load(&deps.storage, locator.game)?;
 
     let mut pay_address = None;
@@ -111,19 +117,23 @@ pub fn join_game<S: Storage, A: Api, Q: Querier>(
             "insufficient_funds 100000 uscrt required",
         ));
     }
-    let locator = Locator::id_from_string(locator);
+    let mut loc_b = [0u8; 32];
+    match hex::decode_to_slice(locator, &mut loc_b as &mut [u8]) {
+        Err(_) => return Err(StdError::generic_err("bad_request invalid_locator")),
+        Ok(_) => (),
+    }
 
     match lobby_game(&mut deps.storage).load()? {
         None => {
             // player1 goes to lobby to wait for player2
-            Locator::new(locator, locator, env.message.sender).save(&mut deps.storage);
-            lobby_game(&mut deps.storage).save(&Some(locator))?;
+            Locator::new(loc_b, loc_b, env.message.sender).save(&mut deps.storage);
+            lobby_game(&mut deps.storage).save(&Some(loc_b))?;
         }
         Some(s) => {
             // player2 joins player1 and lobby becomes empty
             let p1_locator = Locator::load(&mut deps.storage, s)?;
             let game_id = p1_locator.game;
-            let p2_locator = Locator::new(locator, game_id, env.message.sender);
+            let p2_locator = Locator::new(loc_b, game_id, env.message.sender);
             p2_locator.save(&mut deps.storage);
             let game = Game::new(game_id, p1_locator.player, p2_locator.player);
             game.save(&mut deps.storage);
@@ -139,7 +149,12 @@ pub fn claim_inactivity<S: Storage, A: Api, Q: Querier>(
     env: Env,
     locator: String,
 ) -> StdResult<HandleResponse> {
-    let locator = Locator::load(&deps.storage, Locator::id_from_string(locator))?;
+    let mut bytes = [0u8; 32];
+    match hex::decode_to_slice(locator, &mut bytes as &mut [u8]) {
+        Err(_) => return Err(StdError::generic_err("bad_request invalid_locator")),
+        Ok(_) => (),
+    }
+    let locator = Locator::load(&deps.storage, bytes)?;
     let mut game = Game::load(&deps.storage, locator.game)?;
 
     if game.game_over {
@@ -180,7 +195,12 @@ fn game_lobby<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
     locator: String,
 ) -> StdResult<GameLobbyResponse> {
-    let locator = Locator::load(&deps.storage, Locator::id_from_string(locator))?;
+    let mut bytes = [0u8; 32];
+    match hex::decode_to_slice(locator, &mut bytes as &mut [u8]) {
+        Err(_) => return Err(StdError::generic_err("bad_request invalid_locator")),
+        Ok(_) => (),
+    }
+    let locator = Locator::load(&deps.storage, bytes)?;
     let game = Game::may_load(&deps.storage, locator.game)?;
     match game {
         None => Ok(GameLobbyResponse {
@@ -198,7 +218,12 @@ fn game_status<S: Storage, A: Api, Q: Querier>(
     deps: &Extern<S, A, Q>,
     locator: String,
 ) -> StdResult<GameStatusResponse> {
-    let locator = Locator::load(&deps.storage, Locator::id_from_string(locator))?;
+    let mut bytes = [0u8; 32];
+    match hex::decode_to_slice(locator, &mut bytes as &mut [u8]) {
+        Err(_) => return Err(StdError::generic_err("bad_request invalid_locator")),
+        Ok(_) => (),
+    }
+    let locator = Locator::load(&deps.storage, bytes)?;
     let game = Game::load(&deps.storage, locator.game)?;
     return Ok(GameStatusResponse {
         player1_played: !game.player1_handsign.is_none(),
@@ -231,7 +256,7 @@ mod tests {
     use cosmwasm_std::testing::{mock_dependencies, mock_env};
     use cosmwasm_std::{coins, from_binary};
     fn loc(n: u8) -> String {
-        format!("player{} locator is 32 bytes long", n)
+        hex::encode(format!("player{} locator is 32 bytes long", n))
     }
 
     #[test]
