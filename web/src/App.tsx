@@ -58,7 +58,7 @@ export const App: React.FC = () => {
           <Button
             variant="contained"
             color="primary"
-            onClick={() => playGame(client, config.codeId, setGame, enqueueSnackbar)}
+            onClick={() => playGame(client, config.contract, setGame, enqueueSnackbar)}
           >
             Play
           </Button>
@@ -70,29 +70,22 @@ export const App: React.FC = () => {
 
 const playGame = async (
   client: SecretJS.SigningCosmWasmClient,
-  codeId: number,
+  contract: string,
   setGame: Function,
   enqueueSnackbar: Function,
 ) => {
   setGame(null, false);
+
   try {
-    for await (let lobby of findLobbies(client, codeId)) {
-      await client.execute(lobby.address, { join_game: {} }, undefined, [
-        {
-          amount: '1000000',
-          denom: 'uscrt',
-        },
-      ]);
-      setGame(Game.create(lobby.address, false));
-      return;
-    }
-    const result = await client.instantiate(codeId, {}, `Game ${Date.now()}`, undefined, [
+    const game = Game.create(contract);
+    console.log('locator', game.locator);
+    await client.execute(contract, { join_game: { locator: game.locator } }, undefined, [
       {
         amount: '1000000',
         denom: 'uscrt',
       },
     ]);
-    setGame(Game.create(result.contractAddress, true));
+    setGame(game);
   } catch (e) {
     setGame(undefined);
     enqueueSnackbar('Fail. Try funding wallet?', { variant: 'error' });
@@ -100,16 +93,6 @@ const playGame = async (
     return;
   }
 };
-
-async function* findLobbies(client: SecretJS.SigningCosmWasmClient, codeId: number) {
-  const contracts = await client.getContracts(codeId);
-  for (let contract of Array.from(contracts).reverse()) {
-    const lobby = await client.queryContractSmart(contract.address, { game_lobby: {} });
-    if (!lobby.player2_joined) {
-      yield contract;
-    }
-  }
-}
 
 const leaveGame = async (setGame: Function) => {
   setGame(undefined);

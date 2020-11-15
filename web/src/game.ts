@@ -3,7 +3,8 @@ import * as Msg from './msg';
 
 interface Game_ {
   readonly contract: string;
-  readonly creator: boolean;
+  readonly locator: string;
+  readonly player1_locator: boolean | undefined;
   readonly stage: Stage;
   readonly won: boolean;
   readonly wins: number;
@@ -21,10 +22,13 @@ enum Stage {
   Over = 'OVER',
 }
 
-const create = (contract: string, creator: boolean): Game => {
+const create = (contract: string): Game => {
+  const locator = new Uint8Array(32);
+  crypto.getRandomValues(locator);
   return {
     contract,
-    creator,
+    locator: Buffer.from(locator).toString('hex'),
+    player1_locator: undefined,
     stage: Stage.Lobby,
     won: false,
     wins: 0,
@@ -39,19 +43,21 @@ const create = (contract: string, creator: boolean): Game => {
 
 const tick = async (client: SecretJS.SigningCosmWasmClient, game: Game): Promise<Game> => {
   if (game.stage === Stage.Lobby) {
-    const lobby = await client.queryContractSmart(game.contract, { game_lobby: {} });
-    if (!lobby.player2_joined) return game;
-    return { ...game, stage: Stage.GameOn };
+    const lobby = await client.queryContractSmart(game.contract, {
+      game_lobby: { locator: game.locator },
+    });
+    if (!lobby.game_started) return game;
+    game = { ...game, player1_locator: lobby.player1_locator, stage: Stage.GameOn };
   }
 
   const height = await client.getHeight();
   const status: Msg.GameStatusResponse = await client.queryContractSmart(game.contract, {
-    game_status: {},
+    game_status: { locator: game.locator },
   });
   const stage = status.game_over ? Stage.Over : Stage.GameOn;
   const deadlineSeconds = Math.max(0, (status.deadline - height) * 6);
 
-  if (game.creator) {
+  if (game.player1_locator) {
     return {
       ...game,
       stage,

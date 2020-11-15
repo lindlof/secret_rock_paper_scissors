@@ -8,5 +8,11 @@ secretcli tx compute store code/contract.wasm.gz --from a --gas 10000000 -y --ke
 )
 echo Code: $CODE
 
+CONTRACT=$(
+secretcli tx compute instantiate "$CODE" "{}" --from a --amount 1000000uscrt --label "$(date)" -y -b block |
+    jq -r '.logs[].events[].attributes[] | select(.key == "contract_address") | .value'
+)
+echo Contract $CONTRACT
+
 cd web
-REACT_APP_CODE_ID=$CODE docker-compose up --build
+REACT_APP_CONTRACT=$CONTRACT docker-compose up --build
