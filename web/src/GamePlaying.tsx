@@ -38,7 +38,7 @@ interface Props {
   game: Game.Game;
   playHandsign: Function;
   leaveGame: Function;
-  claimInactivity: () => void;
+  claimInactivity: () => Promise<void>;
 }
 
 enum DisplayContent {
@@ -52,9 +52,18 @@ export default (props: Props) => {
   const classes = useStyles();
   const { game, playHandsign, leaveGame, claimInactivity } = props;
   const [pickedRound, setPickedRound] = useState<number>();
+  const [claimingInactivity, setClaimingInactivity] = useState<boolean>(false);
   const pickHandsign = (handsign: Msg.Handsign) => {
     setPickedRound(game.round);
     playHandsign(handsign);
+  };
+  const tryClaimInactivity = async () => {
+    setClaimingInactivity(true);
+    try {
+      await claimInactivity();
+    } catch {
+      setClaimingInactivity(false);
+    }
   };
 
   let displayContent: DisplayContent = DisplayContent.PickHandsign;
@@ -132,11 +141,15 @@ export default (props: Props) => {
             {game.winDeadlineSeconds !== undefined && game.winDeadlineSeconds > 0 && (
               <p>They have {game.winDeadlineSeconds}s</p>
             )}
-            {game.winDeadlineSeconds !== undefined && game.winDeadlineSeconds === 0 && (
-              <Button variant="contained" color="primary" onClick={claimInactivity}>
-                Claim victory for inactivity
-              </Button>
-            )}
+            {game.winDeadlineSeconds !== undefined &&
+              game.winDeadlineSeconds === 0 &&
+              (claimingInactivity ? (
+                <CircularProgress />
+              ) : (
+                <Button variant="contained" color="primary" onClick={tryClaimInactivity}>
+                  Claim victory for inactivity
+                </Button>
+              ))}
           </Paper>
         </Grid>
       </Grid>

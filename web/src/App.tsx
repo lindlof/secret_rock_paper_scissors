@@ -111,7 +111,7 @@ const claimInactivity = async (
   game: Game.Game,
   setGame: Function,
   enqueueSnackbar: Function,
-) => {
+): Promise<void> => {
   try {
     setGame(await Game.claimInactivity(client, game));
   } catch (error) {
