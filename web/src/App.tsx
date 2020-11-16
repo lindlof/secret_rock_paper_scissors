@@ -36,10 +36,6 @@ export const App: React.FC = () => {
       </Grid>
       {client && game && (
         <GameTicker client={client} game={game} setGame={setGame}>
-          <p>Game contract {game.contract}</p>
-          <Button variant="contained" color="primary" onClick={() => leaveGame(setGame)}>
-            Leave game
-          </Button>
           {game?.stage === Game.Stage.Lobby && <p>Waiting for Player 2 to join</p>}
           {game?.stage !== Game.Stage.Lobby && (
             <GamePlaying
@@ -47,6 +43,7 @@ export const App: React.FC = () => {
               playHandsign={(handsign: Msg.Handsign) =>
                 playHandsign(client, game, handsign, setGame, enqueueSnackbar)
               }
+              leaveGame={() => setGame(undefined)}
               claimInactivity={() => claimInactivity(client, game, setGame, enqueueSnackbar)}
             />
           )}
@@ -91,10 +88,6 @@ const playGame = async (
     console.log('playGame error', e);
     return;
   }
-};
-
-const leaveGame = async (setGame: Function) => {
-  setGame(undefined);
 };
 
 const playHandsign = async (
