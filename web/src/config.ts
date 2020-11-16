@@ -1,15 +1,14 @@
 interface Config {
-  readonly codeId: number;
+  readonly contract: string;
 }
 
 export default (): Config => {
-  const codeId: number = codeIdFromEnv();
-  return { codeId };
+  const contract: string = contractFromEnv();
+  return { contract };
 };
 
-const codeIdFromEnv = (): number => {
-  const reactAppCodeId = process.env.REACT_APP_CODE_ID;
-  if (!reactAppCodeId) throw new Error('REACT_APP_CODE_ID not configured');
-  const codeIdParsed = parseInt(reactAppCodeId);
-  return +codeIdParsed;
+const contractFromEnv = (): string => {
+  const reactAppContract = process.env.REACT_APP_CONTRACT;
+  if (!reactAppContract) throw new Error('REACT_APP_CONTRACT not configured');
+  return reactAppContract;
 };

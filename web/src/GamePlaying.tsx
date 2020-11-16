@@ -25,12 +25,20 @@ const useStyles = makeStyles((theme) => ({
   stars: {
     paddingBottom: '0.7em',
   },
+  round: {
+    textAlign: 'center',
+  },
+  leave: {
+    textAlign: 'right',
+    margin: '1em',
+  },
 }));
 
 interface Props {
   game: Game.Game;
   playHandsign: Function;
-  claimInactivity: () => void;
+  leaveGame: Function;
+  claimInactivity: () => Promise<void>;
 }
 
 enum DisplayContent {
@@ -42,15 +50,24 @@ enum DisplayContent {
 
 export default (props: Props) => {
   const classes = useStyles();
-  const { game, playHandsign, claimInactivity } = props;
+  const { game, playHandsign, leaveGame, claimInactivity } = props;
   const [pickedRound, setPickedRound] = useState<number>();
+  const [claimingInactivity, setClaimingInactivity] = useState<boolean>(false);
   const pickHandsign = (handsign: Msg.Handsign) => {
-    setPickedRound(game.wins + game.losses);
+    setPickedRound(game.round);
     playHandsign(handsign);
+  };
+  const tryClaimInactivity = async () => {
+    setClaimingInactivity(true);
+    try {
+      await claimInactivity();
+    } catch {
+      setClaimingInactivity(false);
+    }
   };
 
   let displayContent: DisplayContent = DisplayContent.PickHandsign;
-  if (pickedRound === game.wins + game.losses) {
+  if (pickedRound === game.round) {
     displayContent = DisplayContent.Loading;
   }
   if (game.played) {
@@ -62,6 +79,9 @@ export default (props: Props) => {
 
   return (
     <div className={classes.root}>
+      <h2 className={classes.round}>
+        Round {game.stage === Game.Stage.Over ? game.round - 1 : game.round}
+      </h2>
       <Grid container spacing={3}>
         <Grid item xs={6}>
           <Paper className={classes.paper}>
@@ -121,14 +141,23 @@ export default (props: Props) => {
             {game.winDeadlineSeconds !== undefined && game.winDeadlineSeconds > 0 && (
               <p>They have {game.winDeadlineSeconds}s</p>
             )}
-            {game.winDeadlineSeconds !== undefined && game.winDeadlineSeconds === 0 && (
-              <Button variant="contained" color="primary" onClick={claimInactivity}>
-                Claim victory for inactivity
-              </Button>
-            )}
+            {game.winDeadlineSeconds !== undefined &&
+              game.winDeadlineSeconds === 0 &&
+              (claimingInactivity ? (
+                <CircularProgress />
+              ) : (
+                <Button variant="contained" color="primary" onClick={tryClaimInactivity}>
+                  Claim victory for inactivity
+                </Button>
+              ))}
           </Paper>
         </Grid>
       </Grid>
+      <div className={classes.leave}>
+        <Button variant="contained" color="primary" onClick={() => leaveGame()}>
+          Leave game
+        </Button>
+      </div>
     </div>
   );
 };

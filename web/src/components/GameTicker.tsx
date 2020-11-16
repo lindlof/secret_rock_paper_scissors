@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import * as SecretJS from 'secretjs';
 import * as Game from '../game';
 
@@ -10,22 +10,19 @@ interface Props {
 
 export default (props: React.PropsWithChildren<Props>) => {
   const { children, client, game, setGame } = props;
-  const [tickGame, setTickGame] = useState<Game.Game | undefined>();
 
   useEffect(() => {
     if (!client || !game) return;
     const timer = setInterval(async () => {
       const updatedGame = await Game.tick(client, game);
-      if (game) {
-        setTickGame(updatedGame);
-      }
+      if (updatedGame === undefined) return;
+      setGame((g: Game.Game) => {
+        if (g === undefined) return g;
+        return { ...g, ...updatedGame };
+      });
     }, 2000);
     return () => clearInterval(timer);
   });
-  useEffect(() => {
-    if (!game || !tickGame) return;
-    setGame(tickGame);
-  }, [tickGame, game, setGame]);
 
   return <div>{children}</div>;
 };

@@ -3,6 +3,7 @@ export interface GameLobbyResponse {
 }
 
 export interface GameStatusResponse {
+  round: number;
   player1_played: boolean;
   player2_played: boolean;
   player1_wins: number;

@@ -8,9 +8,9 @@ pub struct InitMsg {}
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum HandleMsg {
-    JoinGame {},
-    PlayHand { handsign: Handsign },
-    ClaimInactivity {},
+    JoinGame { locator: String },
+    PlayHand { locator: String, handsign: Handsign },
+    ClaimInactivity { locator: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, JsonSchema)]
@@ -29,17 +29,19 @@ impl Handsign {
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum QueryMsg {
-    GameLobby {},
-    GameStatus {},
+    GameLobby { locator: String },
+    GameStatus { locator: String },
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct GameLobbyResponse {
-    pub player2_joined: bool,
+    pub game_started: bool,
+    pub player1_locator: bool,
 }
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, JsonSchema)]
 pub struct GameStatusResponse {
+    pub round: u8,
     pub player1_played: bool,
     pub player2_played: bool,
     pub player1_wins: u8,

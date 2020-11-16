@@ -36,10 +36,6 @@ export const App: React.FC = () => {
       </Grid>
       {client && game && (
         <GameTicker client={client} game={game} setGame={setGame}>
-          <p>Game contract {game.contract}</p>
-          <Button variant="contained" color="primary" onClick={() => leaveGame(setGame)}>
-            Leave game
-          </Button>
           {game?.stage === Game.Stage.Lobby && <p>Waiting for Player 2 to join</p>}
           {game?.stage !== Game.Stage.Lobby && (
             <GamePlaying
@@ -47,6 +43,7 @@ export const App: React.FC = () => {
               playHandsign={(handsign: Msg.Handsign) =>
                 playHandsign(client, game, handsign, setGame, enqueueSnackbar)
               }
+              leaveGame={() => setGame(undefined)}
               claimInactivity={() => claimInactivity(client, game, setGame, enqueueSnackbar)}
             />
           )}
@@ -58,7 +55,7 @@ export const App: React.FC = () => {
           <Button
             variant="contained"
             color="primary"
-            onClick={() => playGame(client, config.codeId, setGame, enqueueSnackbar)}
+            onClick={() => playGame(client, config.contract, setGame, enqueueSnackbar)}
           >
             Play
           </Button>
@@ -70,49 +67,27 @@ export const App: React.FC = () => {
 
 const playGame = async (
   client: SecretJS.SigningCosmWasmClient,
-  codeId: number,
+  contract: string,
   setGame: Function,
   enqueueSnackbar: Function,
 ) => {
   setGame(null, false);
+
   try {
-    for await (let lobby of findLobbies(client, codeId)) {
-      await client.execute(lobby.address, { join_game: {} }, undefined, [
-        {
-          amount: '1000000',
-          denom: 'uscrt',
-        },
-      ]);
-      setGame(Game.create(lobby.address, false));
-      return;
-    }
-    const result = await client.instantiate(codeId, {}, `Game ${Date.now()}`, undefined, [
+    const game = Game.create(contract);
+    await client.execute(contract, { join_game: { locator: game.locator } }, undefined, [
       {
         amount: '1000000',
         denom: 'uscrt',
       },
     ]);
-    setGame(Game.create(result.contractAddress, true));
+    setGame(game);
   } catch (e) {
     setGame(undefined);
     enqueueSnackbar('Fail. Try funding wallet?', { variant: 'error' });
     console.log('playGame error', e);
     return;
   }
-};
-
-async function* findLobbies(client: SecretJS.SigningCosmWasmClient, codeId: number) {
-  const contracts = await client.getContracts(codeId);
-  for (let contract of Array.from(contracts).reverse()) {
-    const lobby = await client.queryContractSmart(contract.address, { game_lobby: {} });
-    if (!lobby.player2_joined) {
-      yield contract;
-    }
-  }
-}
-
-const leaveGame = async (setGame: Function) => {
-  setGame(undefined);
 };
 
 const playHandsign = async (
@@ -122,9 +97,11 @@ const playHandsign = async (
   setGame: Function,
   enqueueSnackbar: Function,
 ) => {
+  setGame((g: Game.Game) => ({ ...g, lastHandsign: handsign }));
   try {
-    setGame(await Game.playHandsign(client, game, handsign));
+    await Game.playHandsign(client, game, handsign);
   } catch (error) {
+    setGame((g: Game.Game) => ({ ...g, lastHandsign: undefined }));
     enqueueSnackbar('Secret error', { variant: 'error' });
   }
 };
@@ -134,7 +111,7 @@ const claimInactivity = async (
   game: Game.Game,
   setGame: Function,
   enqueueSnackbar: Function,
-) => {
+): Promise<void> => {
   try {
     setGame(await Game.claimInactivity(client, game));
   } catch (error) {
