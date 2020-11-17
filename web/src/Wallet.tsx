@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import * as SecretJS from 'secretjs';
 import { makeStyles } from '@material-ui/core/styles';
+import { Button } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
 
@@ -20,11 +21,12 @@ const useStyles = makeStyles((theme) => ({
 
 interface Props {
   client: SecretJS.SigningCosmWasmClient | undefined;
+  faucetUrl: string | undefined;
 }
 
 export default (props: Props) => {
   const classes = useStyles();
-  const { client } = props;
+  const { client, faucetUrl } = props;
 
   const [account, setAccount] = useState<SecretJS.Account | undefined>();
   useEffect(() => {
@@ -52,8 +54,13 @@ export default (props: Props) => {
             >
               {client.senderAddress}
             </Typography>
+            {faucetUrl && getScrtBalance(account) < 20 && (
+              <Button variant="contained" color="primary" href={faucetUrl} target="blank">
+                Get funds
+              </Button>
+            )}
             <Typography variant="body1" color="textPrimary" component="p">
-              {account ? getScrtBalance(account.balance) : 0} SCRT
+              {getScrtBalance(account)} SCRT
             </Typography>
           </span>
         ) : (
@@ -73,8 +80,9 @@ const getAccount = async (client: SecretJS.SigningCosmWasmClient, setAccount: Fu
   }
 };
 
-const getScrtBalance = (balances: readonly SecretJS.types.Coin[]): number => {
-  for (let balance of balances) {
+const getScrtBalance = (account: SecretJS.Account | undefined): number => {
+  if (account === undefined) return 0;
+  for (let balance of account.balance) {
     if (balance.denom === 'uscrt') {
       return parseFloat(balance.amount) / 1000000;
     }

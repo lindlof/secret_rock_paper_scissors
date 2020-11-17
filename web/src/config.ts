@@ -1,10 +1,14 @@
 interface Config {
   readonly contract: string;
+  readonly faucetUrl: string | undefined;
 }
 
 export default (): Config => {
   const contract: string = contractFromEnv();
-  return { contract };
+  return {
+    contract,
+    faucetUrl: process.env.REACT_APP_FAUCET,
+  };
 };
 
 const contractFromEnv = (): string => {

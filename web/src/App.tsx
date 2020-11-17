@@ -31,7 +31,7 @@ export const App: React.FC = () => {
           <Banner />
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Wallet client={client} />
+          <Wallet client={client} faucetUrl={config.faucetUrl} />
         </Grid>
       </Grid>
       {client && game && (
