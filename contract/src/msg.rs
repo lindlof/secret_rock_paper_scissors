@@ -13,11 +13,16 @@ pub enum HandleMsg {
     ClaimInactivity { locator: String },
 }
 
+/**
+ * Moves that player can make.
+ * Size of each handsign must be equal in input so that opponent
+ * can't guess player's move from input size.
+ */
 #[derive(Serialize, Deserialize, Clone, Copy, Debug, PartialEq, JsonSchema)]
 pub enum Handsign {
     ROCK = 0,
-    PAPER = 1,
-    SCISSORS = 2,
+    PAPR = 1,
+    SCRS = 2,
 }
 
 impl Handsign {

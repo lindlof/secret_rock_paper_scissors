@@ -14,6 +14,6 @@ export interface GameStatusResponse {
 
 export enum Handsign {
   Rock = 'ROCK',
-  Paper = 'PAPER',
-  Scissors = 'SCISSORS',
+  Paper = 'PAPR',
+  Scissors = 'SCRS',
 }

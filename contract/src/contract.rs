@@ -297,7 +297,7 @@ mod tests {
         let env = mock_env("player2", &coins(2, "token"));
         let msg = HandleMsg::PlayHand {
             locator: loc(2),
-            handsign: Handsign::PAPER,
+            handsign: Handsign::PAPR,
         };
         let _res = handle(&mut deps, env, msg).unwrap();
 
@@ -334,7 +334,7 @@ mod tests {
             let env = mock_env("player2", &coins(2, "token"));
             let msg = HandleMsg::PlayHand {
                 locator: loc(2),
-                handsign: Handsign::PAPER,
+                handsign: Handsign::PAPR,
             };
             let res = handle(&mut deps, env, msg).unwrap();
             if r == WINS_TO_FINISH - 1 {
