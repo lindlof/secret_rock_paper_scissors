@@ -522,4 +522,16 @@ mod tests {
         let msg = HandleMsg::ClaimInactivity { locator: loc(1) };
         handle(&mut deps, env, msg).unwrap_err();
     }
+
+    #[test]
+    fn minimum_funding_required() {
+        let mut deps = mock_dependencies(20, &coins(0, "uscrt"));
+        let env = mock_env("creator", &[]);
+        let msg = InitMsg {};
+        let _res = init(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player1", &coins(FUNDING_AMOUNT - 1, "uscrt"));
+        let msg = HandleMsg::JoinGame { locator: loc(1) };
+        let _res = handle(&mut deps, env, msg).unwrap_err();
+    }
 }
