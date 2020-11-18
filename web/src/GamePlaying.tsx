@@ -77,6 +77,17 @@ export default (props: Props) => {
     displayContent = DisplayContent.Ending;
   }
 
+  if (game?.stage === Game.Stage.Lobby) {
+    return (
+      <div>
+        <p>Waiting for Player 2 to join</p>
+        <Button variant="contained" color="primary" onClick={tryClaimInactivity}>
+          Cancel game
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className={classes.root}>
       <h2 className={classes.round}>

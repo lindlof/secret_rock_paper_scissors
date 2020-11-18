@@ -36,17 +36,14 @@ export const App: React.FC = () => {
       </Grid>
       {client && game && (
         <GameTicker client={client} game={game} setGame={setGame}>
-          {game?.stage === Game.Stage.Lobby && <p>Waiting for Player 2 to join</p>}
-          {game?.stage !== Game.Stage.Lobby && (
-            <GamePlaying
-              game={game}
-              playHandsign={(handsign: Msg.Handsign) =>
-                playHandsign(client, game, handsign, setGame, enqueueSnackbar)
-              }
-              leaveGame={() => setGame(undefined)}
-              claimInactivity={() => claimInactivity(client, game, setGame, enqueueSnackbar)}
-            />
-          )}
+          <GamePlaying
+            game={game}
+            playHandsign={(handsign: Msg.Handsign) =>
+              playHandsign(client, game, handsign, setGame, enqueueSnackbar)
+            }
+            leaveGame={() => setGame(undefined)}
+            claimInactivity={() => claimInactivity(client, game, setGame, enqueueSnackbar)}
+          />
         </GameTicker>
       )}
       {game === null && <CircularProgress />}
