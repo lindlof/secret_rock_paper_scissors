@@ -139,7 +139,7 @@ const initClient = async (setClient: Function) => {
   );
 
   const secretJsClient = new SecretJS.SigningCosmWasmClient(
-    'http://localhost:1338',
+    config.lcdUrl,
     walletAddress,
     (signBytes) => signingPen.sign(signBytes),
     tx_encryption_seed,
