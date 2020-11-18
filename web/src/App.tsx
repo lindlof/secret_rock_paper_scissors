@@ -74,7 +74,7 @@ const playGame = async (
     const game = Game.create(contract);
     await client.execute(contract, { join_game: { locator: game.locator } }, undefined, [
       {
-        amount: '1000000',
+        amount: '10000000',
         denom: 'uscrt',
       },
     ]);
