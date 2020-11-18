@@ -157,7 +157,27 @@ pub fn claim_inactivity<S: Storage, A: Api, Q: Querier>(
         Ok(_) => (),
     }
     let locator = Locator::load(&deps.storage, bytes)?;
-    let mut game = Game::load(&deps.storage, locator.game)?;
+    let mut game;
+
+    match Game::load(&deps.storage, locator.game) {
+        Err(_) => {
+            match lobby_game(&mut deps.storage).load()? {
+                None => return Err(StdError::generic_err("not_found No game or lobby found")),
+                Some(s) => {
+                    if s != bytes {
+                        return Err(StdError::generic_err("not_found No game or lobby match"));
+                    }
+                    lobby_game(&mut deps.storage).save(&None)?;
+                    return Ok(payout(
+                        env.contract.address,
+                        env.message.sender,
+                        Uint128(FUNDING_AMOUNT),
+                    ));
+                }
+            };
+        }
+        Ok(g) => game = g,
+    }
 
     if game.game_over {
         return Err(StdError::generic_err("game_over"));
@@ -448,5 +468,35 @@ mod tests {
         env.block.height += PLAYER_DEADLINE_BLOCKS;
         let msg = HandleMsg::ClaimInactivity { locator: loc(1) };
         handle(&mut deps, env, msg).unwrap_err();
+    }
+    #[test]
+    fn claim_lobby_inactivity() {
+        let mut deps = mock_dependencies(20, &coins(0, "uscrt"));
+        let env = mock_env("creator", &[]);
+        let msg = InitMsg {};
+        init(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player1", &coins(FUNDING_AMOUNT, "uscrt"));
+        let msg = HandleMsg::JoinGame { locator: loc(1) };
+        handle(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player1", &[]);
+        let msg = HandleMsg::ClaimInactivity { locator: loc(1) };
+        let res = handle(&mut deps, env, msg).unwrap();
+
+        assert_eq!(res.messages.len(), 1);
+        match &res.messages[0] {
+            CosmosMsg::Bank(BankMsg::Send {
+                to_address, amount, ..
+            }) => {
+                assert_eq!(to_address.as_str(), "player1");
+                assert_eq!(amount.len(), 1);
+                assert_eq!(amount[0].denom, "uscrt");
+                assert_eq!(amount[0].amount, Uint128(FUNDING_AMOUNT));
+            }
+            _ => {
+                panic!("Expected claim for inactivity");
+            }
+        }
     }
 }
