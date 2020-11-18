@@ -461,7 +461,22 @@ mod tests {
         let mut env = mock_env("player1", &coins(1000, "token"));
         env.block.height += PLAYER_DEADLINE_BLOCKS;
         let msg = HandleMsg::ClaimInactivity { locator: loc(1) };
-        handle(&mut deps, env, msg).unwrap();
+        let res = handle(&mut deps, env, msg).unwrap();
+
+        assert_eq!(res.messages.len(), 1);
+        match &res.messages[0] {
+            CosmosMsg::Bank(BankMsg::Send {
+                to_address, amount, ..
+            }) => {
+                assert_eq!(to_address.as_str(), "player1");
+                assert_eq!(amount.len(), 1);
+                assert_eq!(amount[0].denom, "uscrt");
+                assert_eq!(amount[0].amount, Uint128(FUNDING_AMOUNT * 2));
+            }
+            _ => {
+                panic!("Expected claim for inactivity");
+            }
+        }
 
         // Can't double claim
         let mut env = mock_env("player1", &coins(1000, "token"));
@@ -475,6 +490,10 @@ mod tests {
         let env = mock_env("creator", &[]);
         let msg = InitMsg {};
         init(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player1", &[]);
+        let msg = HandleMsg::ClaimInactivity { locator: loc(1) };
+        handle(&mut deps, env, msg).unwrap_err();
 
         let env = mock_env("player1", &coins(FUNDING_AMOUNT, "uscrt"));
         let msg = HandleMsg::JoinGame { locator: loc(1) };
@@ -498,5 +517,9 @@ mod tests {
                 panic!("Expected claim for inactivity");
             }
         }
+
+        let env = mock_env("player1", &[]);
+        let msg = HandleMsg::ClaimInactivity { locator: loc(1) };
+        handle(&mut deps, env, msg).unwrap_err();
     }
 }
