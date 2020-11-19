@@ -1,27 +1,25 @@
 interface Config {
+  readonly chainId: string;
+  readonly chainName: string;
   readonly lcdUrl: string;
+  readonly rpcUrl: string;
   readonly contract: string;
   readonly faucetUrl: string | undefined;
 }
 
 export default (): Config => {
-  const lcdUrl: string = lcdUrlFromEnv();
-  const contract: string = contractFromEnv();
   return {
-    lcdUrl,
-    contract,
+    chainId: requiredEnv('REACT_APP_CHAIN_ID'),
+    chainName: requiredEnv('REACT_APP_CHAIN_NAME'),
+    lcdUrl: requiredEnv('REACT_APP_LCD_URL'),
+    rpcUrl: requiredEnv('REACT_APP_RPC_URL'),
+    contract: requiredEnv('REACT_APP_CONTRACT'),
     faucetUrl: process.env.REACT_APP_FAUCET,
   };
 };
 
-const lcdUrlFromEnv = (): string => {
-  const reactAppContract = process.env.REACT_APP_LCD_URL;
-  if (!reactAppContract) throw new Error('REACT_APP_LCD_URL not configured');
-  return reactAppContract;
-};
-
-const contractFromEnv = (): string => {
-  const reactAppContract = process.env.REACT_APP_CONTRACT;
-  if (!reactAppContract) throw new Error('REACT_APP_CONTRACT not configured');
-  return reactAppContract;
+const requiredEnv = (key: string): string => {
+  const val = process.env[key];
+  if (!val) throw new Error(`${key} not configured`);
+  return val;
 };
