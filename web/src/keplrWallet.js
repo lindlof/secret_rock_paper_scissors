@@ -116,8 +116,26 @@ export default async (chainId, chainName, lcdUrl, rpcUrl, setClient) => {
   const secretJsClient = new SecretJS.SigningCosmWasmClient(
     lcdUrl,
     accounts[0].address,
-    offlineSigner,
+    async (signBytes) => {
+      const signDoc = JSON.parse(new TextDecoder('utf-8').decode(signBytes));
+      const sig = await offlineSigner.sign(accounts[0].address, signDoc);
+      console.log(sig);
+      return sig.signature;
+    },
+    undefined,
+    {
+      init: {
+        amount: [{ amount: '250000', denom: 'uscrt' }],
+        gas: '250000',
+      },
+      exec: {
+        amount: [{ amount: '250000', denom: 'uscrt' }],
+        gas: '250000',
+      },
+    },
   );
+
+  console.log(SecretJS);
 
   setClient(secretJsClient);
 };
