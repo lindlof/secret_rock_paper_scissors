@@ -134,11 +134,11 @@ export default async (chainId, chainName, lcdUrl, rpcUrl, setClient) => {
     tx_encryption_seed,
     {
       init: {
-        amount: [{ amount: '250000', denom: 'uscrt' }],
+        amount: [{ amount: '6250', denom: 'uscrt' }],
         gas: '250000',
       },
       exec: {
-        amount: [{ amount: '250000', denom: 'uscrt' }],
+        amount: [{ amount: '6250', denom: 'uscrt' }],
         gas: '250000',
       },
     },
