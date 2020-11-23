@@ -38,7 +38,7 @@ export default async (chainId, chainName, lcdUrl, rpcUrl, setClient) => {
           bip44: {
             // You can only set the coin type of BIP44.
             // 'Purpose' is fixed to 44.
-            coinType: 118,
+            coinType: 529,
           },
           // Bech32 configuration to show the address to user.
           // This field is the interface of
@@ -79,7 +79,7 @@ export default async (chainId, chainName, lcdUrl, rpcUrl, setClient) => {
           // Ideally, it is recommended to be the same with BIP44 path's coin type.
           // However, some early chains may choose to use the Cosmos Hub BIP44 path of '118'.
           // So, this is separated to support such chains.
-          coinType: 118,
+          coinType: 529,
           // (Optional) This is used to set the fee of the transaction.
           // If this field is not provided, Keplr extension will set the default gas price as (low: 0.01, average: 0.025, high: 0.04).
           // Currently, Keplr doesn't support dynamic calculation of the gas prices based on on-chain data.
@@ -109,8 +109,16 @@ export default async (chainId, chainName, lcdUrl, rpcUrl, setClient) => {
   // You can get the address/public keys by `getAccounts` method.
   // It can return the array of address/public key.
   // But, currently, Keplr extension manages only one address/public key pair.
-  // XXX: This line is needed to set the sender address for SigningCosmosClient.
   const accounts = await offlineSigner.getAccounts();
+
+  let tx_encryption_seed;
+  const tx_encryption_seed_storage = localStorage.getItem('tx_encryption_seed');
+  if (tx_encryption_seed_storage) {
+    tx_encryption_seed = Uint8Array.from(JSON.parse(`[${tx_encryption_seed_storage}]`));
+  } else {
+    tx_encryption_seed = SecretJS.EnigmaUtils.GenerateNewSeed();
+    localStorage.setItem('tx_encryption_seed', tx_encryption_seed.toString());
+  }
 
   // Initialize the gaia api with the offline signer that is injected by Keplr extension.
   const secretJsClient = new SecretJS.SigningCosmWasmClient(
@@ -118,11 +126,12 @@ export default async (chainId, chainName, lcdUrl, rpcUrl, setClient) => {
     accounts[0].address,
     async (signBytes) => {
       const signDoc = JSON.parse(new TextDecoder('utf-8').decode(signBytes));
+      console.log('signDoc', signDoc);
       const sig = await offlineSigner.sign(accounts[0].address, signDoc);
       console.log(sig);
       return sig.signature;
     },
-    undefined,
+    tx_encryption_seed,
     {
       init: {
         amount: [{ amount: '250000', denom: 'uscrt' }],
@@ -134,8 +143,6 @@ export default async (chainId, chainName, lcdUrl, rpcUrl, setClient) => {
       },
     },
   );
-
-  console.log(SecretJS);
 
   setClient(secretJsClient);
 };
