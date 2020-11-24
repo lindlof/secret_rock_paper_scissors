@@ -9,7 +9,7 @@
     "react": "^16.14.0",
     "react-dom": "^16.14.0",
     "react-scripts": "3.4.3",
-    "secretjs": "^0.10.0"
+    "secretjs": "0.10.3"
   },
   "scripts": {
     "start": "react-scripts start",

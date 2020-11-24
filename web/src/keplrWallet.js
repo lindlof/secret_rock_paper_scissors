@@ -1,6 +1,20 @@
 import * as SecretJS from 'secretjs';
 
 export default async (chainId, chainName, lcdUrl, rpcUrl, setClient) => {
+  const keplrCheckPromise = new Promise((accept, _reject) => {
+    // 1. Every one second, check if Keplr was injected to the page
+    const keplrCheckInterval = setInterval(async () => {
+      const isKeplrWallet = !!window.keplr && !!window.getOfflineSigner && !!window.getEnigmaUtils;
+
+      if (isKeplrWallet) {
+        // Keplr is present, stop checking
+        clearInterval(keplrCheckInterval);
+        accept();
+      }
+    }, 1000);
+  });
+  await keplrCheckPromise;
+
   // Keplr extension injects the offline signer that is compatible with cosmJS.
   // You can get this offline signer from `window.getOfflineSigner(chainId:string)` after load event.
   // And it also injects the helper function to `window.keplr`.
@@ -85,10 +99,11 @@ export default async (chainId, chainName, lcdUrl, rpcUrl, setClient) => {
           // Currently, Keplr doesn't support dynamic calculation of the gas prices based on on-chain data.
           // Make sure that the gas prices are higher than the minimum gas prices accepted by chain validators and RPC/REST endpoint.
           gasPriceStep: {
-            low: 0.01,
-            average: 0.025,
-            high: 0.04,
+            low: 0.1,
+            average: 0.25,
+            high: 0.4,
           },
+          features: ['secretwasm'],
         });
       } catch {
         alert('Failed to suggest the chain');
@@ -111,34 +126,19 @@ export default async (chainId, chainName, lcdUrl, rpcUrl, setClient) => {
   // But, currently, Keplr extension manages only one address/public key pair.
   const accounts = await offlineSigner.getAccounts();
 
-  let tx_encryption_seed;
-  const tx_encryption_seed_storage = localStorage.getItem('tx_encryption_seed');
-  if (tx_encryption_seed_storage) {
-    tx_encryption_seed = Uint8Array.from(JSON.parse(`[${tx_encryption_seed_storage}]`));
-  } else {
-    tx_encryption_seed = SecretJS.EnigmaUtils.GenerateNewSeed();
-    localStorage.setItem('tx_encryption_seed', tx_encryption_seed.toString());
-  }
-
   // Initialize the gaia api with the offline signer that is injected by Keplr extension.
   const secretJsClient = new SecretJS.SigningCosmWasmClient(
     lcdUrl,
     accounts[0].address,
-    async (signBytes) => {
-      const signDoc = JSON.parse(new TextDecoder('utf-8').decode(signBytes));
-      console.log('signDoc', signDoc);
-      const sig = await offlineSigner.sign(accounts[0].address, signDoc);
-      console.log(sig);
-      return sig.signature;
-    },
-    tx_encryption_seed,
+    offlineSigner,
+    window.getEnigmaUtils(chainId),
     {
       init: {
-        amount: [{ amount: '6250', denom: 'uscrt' }],
+        amount: [{ amount: '250000', denom: 'uscrt' }],
         gas: '250000',
       },
       exec: {
-        amount: [{ amount: '6250', denom: 'uscrt' }],
+        amount: [{ amount: '250000', denom: 'uscrt' }],
         gas: '250000',
       },
     },
