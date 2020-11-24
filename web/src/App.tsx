@@ -72,21 +72,23 @@ const playGame = async (
 ) => {
   setGame(null, false);
 
+  const game = Game.create(contract);
   try {
-    const game = Game.create(contract);
     await client.execute(contract, { join_game: { locator: game.locator } }, undefined, [
       {
         amount: '10000000',
         denom: 'uscrt',
       },
     ]);
-    setGame(game);
   } catch (e) {
-    setGame(undefined);
-    enqueueSnackbar('Fail. Try funding wallet?', { variant: 'error' });
-    console.log('playGame error', e);
-    return;
+    if (e.message !== 'ciphertext not set') {
+      setGame(undefined);
+      enqueueSnackbar('Fail. Try funding wallet?', { variant: 'error' });
+      console.log('playGame error', e);
+      return;
+    }
   }
+  setGame(game);
 };
 
 const playHandsign = async (
