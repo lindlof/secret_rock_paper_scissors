@@ -7,13 +7,11 @@ import Config from './config';
 import * as Game from './game';
 import GamePlaying from './GamePlaying';
 import { useSnackbar } from 'notistack';
-import Wallet from './Wallet';
+import Wallet from './wallet/Wallet';
 import Banner from './Banner';
 import Grid from '@material-ui/core/Grid';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import GameTicker from './components/GameTicker';
-import localWallet from './localWallet';
-import keplr from './keplrWallet';
 
 const config = Config();
 
@@ -21,10 +19,6 @@ export const App: React.FC = () => {
   const [client, setClient] = useState<SecretJS.SigningCosmWasmClient | undefined>();
   const [game, setGame] = useLocalStorage<Game.Game | null | undefined>('game', undefined);
   const { enqueueSnackbar } = useSnackbar();
-  useEffect(() => {
-    //localWallet(config.lcdUrl, setClient);
-    keplr(config.chainId, config.chainName, config.lcdUrl, config.rpcUrl, setClient);
-  }, []);
 
   return (
     <div>
@@ -33,7 +27,7 @@ export const App: React.FC = () => {
           <Banner />
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Wallet client={client} faucetUrl={config.faucetUrl} />
+          <Wallet client={client} setClient={setClient} faucetUrl={config.faucetUrl} />
         </Grid>
       </Grid>
       {client && game && (
