@@ -35,9 +35,9 @@ export default (props: React.PropsWithChildren<Props>) => {
       <h2>Loading wallet</h2>
       <p>
         {walletType === WalletType.LocalWallet &&
-          `${walletTypeName[walletType]} should be ready shortly`}
+          `${walletTypeName.get(walletType)} wallet should be ready shortly`}
         {walletType === WalletType.Keplr &&
-          `Make sure you have ${walletTypeName[walletType]} extension installed`}
+          `Make sure you have ${walletTypeName.get(walletType)} extension installed`}
       </p>
       <div>
         <Grid container spacing={3} alignItems="flex-end">

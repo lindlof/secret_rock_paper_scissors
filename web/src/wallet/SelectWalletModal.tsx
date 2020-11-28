@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import * as SecretJS from 'secretjs';
 import { makeStyles } from '@material-ui/core/styles';
 import { Button } from '@material-ui/core';
@@ -26,18 +26,15 @@ const useStyles = makeStyles((theme) => ({
 }));
 
 interface Props {
+  walletType: WalletType | undefined;
+  setWalletType: (wallet: WalletType | undefined) => void;
   client: SecretJS.SigningCosmWasmClient | undefined;
   setClient: (client: SecretJS.SigningCosmWasmClient) => void;
 }
 
-export default (props: React.PropsWithChildren<Props>) => {
+export default (props: Props) => {
   const classes = useStyles();
-  const { client, setClient } = props;
-  const [loadWallet, setLoadWallet] = useState<WalletType | undefined>();
-
-  useEffect(() => {
-    if (client) setLoadWallet(undefined);
-  }, [client]);
+  const { walletType, setWalletType, client, setClient } = props;
 
   return (
     <div>
@@ -48,33 +45,32 @@ export default (props: React.PropsWithChildren<Props>) => {
           aria-describedby="simple-modal-description"
         >
           <Paper className={classes.paper}>
-            {!loadWallet && (
+            {!walletType && (
               <div>
                 <h2>Select wallet</h2>
                 <Button
                   variant="contained"
                   color="primary"
-                  onClick={() => setLoadWallet(WalletType.Keplr)}
+                  onClick={() => setWalletType(WalletType.Keplr)}
                 >
                   Use Keplr
                 </Button>
-                <Button variant="contained" onClick={() => setLoadWallet(WalletType.LocalWallet)}>
+                <Button variant="contained" onClick={() => setWalletType(WalletType.LocalWallet)}>
                   Local wallet
                 </Button>
               </div>
             )}
-            {loadWallet && (
+            {walletType && (
               <ClientLoader
-                walletType={loadWallet}
+                walletType={walletType}
                 config={config}
                 setClient={setClient}
-                cancel={() => setLoadWallet(undefined)}
+                cancel={() => setWalletType(undefined)}
               />
             )}
           </Paper>
         </Modal>
       )}
-      {props.children}
     </div>
   );
 };

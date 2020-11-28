@@ -3,9 +3,9 @@ enum WalletType {
   LocalWallet = 'LOCAL_WALLET',
 }
 
-const walletTypeName = {
-  [WalletType.Keplr]: 'Keplr',
-  [WalletType.LocalWallet]: 'Local wallet',
-};
+const walletTypeName = new Map([
+  [WalletType.Keplr, 'Keplr'],
+  [WalletType.LocalWallet, 'Local'],
+]);
 
 export { WalletType, walletTypeName };
