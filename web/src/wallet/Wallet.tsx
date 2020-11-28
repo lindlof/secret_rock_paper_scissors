@@ -4,11 +4,6 @@ import { makeStyles } from '@material-ui/core/styles';
 import { Button } from '@material-ui/core';
 import Paper from '@material-ui/core/Paper';
 import Typography from '@material-ui/core/Typography';
-import Config from '../config';
-import localWallet from './localWallet';
-import keplr from './keplrWallet';
-
-const config = Config();
 
 const useStyles = makeStyles((theme) => ({
   root: {
@@ -26,18 +21,13 @@ const useStyles = makeStyles((theme) => ({
 
 interface Props {
   client: SecretJS.SigningCosmWasmClient | undefined;
-  setClient: (client: SecretJS.SigningCosmWasmClient) => void;
   faucetUrl: string | undefined;
 }
 
 export default (props: Props) => {
   const classes = useStyles();
-  const { client, setClient, faucetUrl } = props;
+  const { client, faucetUrl } = props;
 
-  useEffect(() => {
-    //localWallet(config.lcdUrl, setClient);
-    keplr(config.chainId, config.chainName, config.lcdUrl, config.rpcUrl, setClient);
-  }, []);
   const [account, setAccount] = useState<SecretJS.Account | undefined>();
   useEffect(() => {
     if (!client) return;

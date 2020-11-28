@@ -7,7 +7,7 @@ interface Config {
   readonly faucetUrl: string | undefined;
 }
 
-export default (): Config => {
+const envConfig = (): Config => {
   return {
     chainId: requiredEnv('REACT_APP_CHAIN_ID'),
     chainName: requiredEnv('REACT_APP_CHAIN_NAME'),
@@ -23,3 +23,6 @@ const requiredEnv = (key: string): string => {
   if (!val) throw new Error(`${key} not configured`);
   return val;
 };
+
+export type { Config };
+export { envConfig };
