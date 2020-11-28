@@ -15,4 +15,10 @@ secretcli tx compute instantiate "$CODE" "{}" --from a --amount 1000000uscrt --l
 echo Contract $CONTRACT
 
 cd web
-REACT_APP_LCD_URL=http://localhost:1338 REACT_APP_CONTRACT=$CONTRACT docker-compose up --build
+
+export REACT_APP_CHAIN_ID=enigma-pub-testnet-3
+export REACT_APP_CHAIN_NAME="Secret localhost"
+export REACT_APP_LCD_URL=http://localhost:1338
+export REACT_APP_RPC_URL=http://localhost:26657
+export REACT_APP_CONTRACT="$CONTRACT"
+docker-compose up --build
