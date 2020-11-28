@@ -1,17 +1,31 @@
 import * as SecretJS from 'secretjs';
 
-export default async (chainId, chainName, lcdUrl, rpcUrl, setClient) => {
+export default async (
+  chainId: string,
+  chainName: string,
+  lcdUrl: string,
+  rpcUrl: string,
+  setClient: Function,
+) => {
+  // @ts-ignore
   if (!window.keplr || !window.getOfflineSigner || !window.getEnigmaUtils) {
     return;
   }
+
+  // @ts-ignore
+  const keplr = window.keplr;
+  // @ts-ignore
+  const offlineSigner = window.getOfflineSigner(chainId);
+  // @ts-ignore
+  const enigmaUtils = window.getEnigmaUtils(chainId);
 
   // Keplr extension injects the offline signer that is compatible with cosmJS.
   // You can get this offline signer from `window.getOfflineSigner(chainId:string)` after load event.
   // And it also injects the helper function to `window.keplr`.
   // If `window.getOfflineSigner` or `window.keplr` is null, Keplr extension may be not installed on browser.
-  if (window.keplr.experimentalSuggestChain) {
+  if (keplr.experimentalSuggestChain) {
     try {
-      await window.keplr.experimentalSuggestChain({
+      await keplr.experimentalSuggestChain({
         // Chain-id of the Cosmos SDK chain.
         chainId,
         // The name of the chain to be displayed to the user.
@@ -103,9 +117,7 @@ export default async (chainId, chainName, lcdUrl, rpcUrl, setClient) => {
   // This method will ask the user whether or not to allow access if they haven't visited this website.
   // Also, it will request user to unlock the wallet if the wallet is locked.
   // If you don't request enabling before usage, there is no guarantee that other methods will work.
-  await window.keplr.enable(chainId);
-
-  const offlineSigner = window.getOfflineSigner(chainId);
+  await keplr.enable(chainId);
 
   // You can get the address/public keys by `getAccounts` method.
   // It can return the array of address/public key.
@@ -117,7 +129,7 @@ export default async (chainId, chainName, lcdUrl, rpcUrl, setClient) => {
     lcdUrl,
     accounts[0].address,
     offlineSigner,
-    window.getEnigmaUtils(chainId),
+    enigmaUtils,
     {
       init: {
         amount: [{ amount: '250000', denom: 'uscrt' }],
