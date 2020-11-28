@@ -2,18 +2,23 @@ import React, { useEffect, useState } from 'react';
 import * as SecretJS from 'secretjs';
 import { makeStyles } from '@material-ui/core/styles';
 import { Button } from '@material-ui/core';
-import Paper from '@material-ui/core/Paper';
+import Card from '@material-ui/core/Card';
+import CardContent from '@material-ui/core/CardContent';
+import CardActions from '@material-ui/core/CardActions';
 import Typography from '@material-ui/core/Typography';
+import SelectWalletModal from './SelectWalletModal';
+import { WalletType, walletTypeName } from './model';
+import { useLocalStorage } from '../utils';
 
 const useStyles = makeStyles((theme) => ({
   root: {
     maxWidth: '15em',
   },
-  paper: {
-    padding: theme.spacing(2),
+  card: {
     textAlign: 'center',
     color: theme.palette.text.secondary,
   },
+  cardActions: {},
   address: {
     wordBreak: 'break-all',
   },
@@ -21,12 +26,17 @@ const useStyles = makeStyles((theme) => ({
 
 interface Props {
   client: SecretJS.SigningCosmWasmClient | undefined;
+  setClient: (client: SecretJS.SigningCosmWasmClient | undefined) => void;
   faucetUrl: string | undefined;
 }
 
 export default (props: Props) => {
   const classes = useStyles();
-  const { client, faucetUrl } = props;
+  const { client, setClient, faucetUrl } = props;
+  const [walletType, setWalletType] = useLocalStorage<WalletType | undefined>(
+    'wallet_type',
+    undefined,
+  );
 
   const [account, setAccount] = useState<SecretJS.Account | undefined>();
   useEffect(() => {
@@ -40,33 +50,52 @@ export default (props: Props) => {
 
   return (
     <div className={classes.root}>
-      <Paper className={classes.paper}>
-        <Typography variant="h5" color="textPrimary">
-          Wallet
-        </Typography>
-        {client ? (
-          <span>
-            <Typography
-              variant="body2"
-              color="textSecondary"
-              component="p"
-              className={classes.address}
-            >
-              {client.senderAddress}
-            </Typography>
-            {faucetUrl && getScrtBalance(account) < 20 && (
-              <Button variant="contained" color="primary" href={faucetUrl} target="blank">
-                Get funds
-              </Button>
-            )}
-            <Typography variant="body1" color="textPrimary" component="p">
-              {getScrtBalance(account)} SCRT
-            </Typography>
-          </span>
-        ) : (
-          <span>Loading</span>
-        )}
-      </Paper>
+      <SelectWalletModal
+        walletType={walletType}
+        setWalletType={setWalletType}
+        client={client}
+        setClient={setClient}
+      />
+      <Card className={classes.card}>
+        <CardContent>
+          <Typography variant="h5" color="textPrimary" gutterBottom>
+            {`${walletTypeName.get(walletType) || ''} Wallet`}
+          </Typography>
+          {client ? (
+            <span>
+              <Typography
+                variant="body2"
+                color="textSecondary"
+                component="p"
+                className={classes.address}
+              >
+                {client.senderAddress}
+              </Typography>
+              {faucetUrl && getScrtBalance(account) < 20 && (
+                <Button variant="contained" color="primary" href={faucetUrl} target="blank">
+                  Get funds
+                </Button>
+              )}
+              <Typography variant="body1" color="textPrimary" component="p">
+                {getScrtBalance(account)} SCRT
+              </Typography>
+            </span>
+          ) : (
+            <span>Loading</span>
+          )}
+        </CardContent>
+        <CardActions className={classes.cardActions}>
+          <Button
+            size="small"
+            onClick={() => {
+              setClient(undefined);
+              setWalletType(undefined);
+            }}
+          >
+            Change
+          </Button>
+        </CardActions>
+      </Card>
     </div>
   );
 };

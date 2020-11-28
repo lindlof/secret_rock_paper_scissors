@@ -8,7 +8,6 @@ import * as Game from './game';
 import GamePlaying from './GamePlaying';
 import { useSnackbar } from 'notistack';
 import Wallet from './wallet/Wallet';
-import ClientProvider from './wallet/ClientProvider';
 import Banner from './Banner';
 import Grid from '@material-ui/core/Grid';
 import CircularProgress from '@material-ui/core/CircularProgress';
@@ -22,13 +21,13 @@ export const App: React.FC = () => {
   const { enqueueSnackbar } = useSnackbar();
 
   return (
-    <ClientProvider client={client} setClient={setClient}>
+    <div>
       <Grid container spacing={3} alignItems="flex-end">
         <Grid item xs={12} sm={8}>
           <Banner />
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Wallet client={client} faucetUrl={config.faucetUrl} />
+          <Wallet client={client} setClient={setClient} faucetUrl={config.faucetUrl} />
         </Grid>
       </Grid>
       {client && game && (
@@ -55,7 +54,7 @@ export const App: React.FC = () => {
           </Button>
         </div>
       )}
-    </ClientProvider>
+    </div>
   );
 };
 
