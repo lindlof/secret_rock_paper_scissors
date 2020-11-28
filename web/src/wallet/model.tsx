@@ -1,6 +1,11 @@
 enum WalletType {
   Keplr = 'KEPLR',
-  LocalStorage = 'LOCAL_STORAGE',
+  LocalWallet = 'LOCAL_WALLET',
 }
 
-export { WalletType };
+const walletTypeName = {
+  [WalletType.Keplr]: 'Keplr',
+  [WalletType.LocalWallet]: 'Local wallet',
+};
+
+export { WalletType, walletTypeName };

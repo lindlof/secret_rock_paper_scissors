@@ -58,7 +58,7 @@ export default (props: React.PropsWithChildren<Props>) => {
                 >
                   Use Keplr
                 </Button>
-                <Button variant="contained" onClick={() => setLoadWallet(WalletType.LocalStorage)}>
+                <Button variant="contained" onClick={() => setLoadWallet(WalletType.LocalWallet)}>
                   Local wallet
                 </Button>
               </div>

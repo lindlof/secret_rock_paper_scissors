@@ -2,9 +2,10 @@ import React, { useEffect } from 'react';
 import { Button } from '@material-ui/core';
 import { Config } from '../config';
 import CircularProgress from '@material-ui/core/CircularProgress';
+import Grid from '@material-ui/core/Grid';
 import localWallet from './localWallet';
 import keplr from './keplrWallet';
-import { WalletType } from './model';
+import { WalletType, walletTypeName } from './model';
 
 interface Props {
   walletType: WalletType;
@@ -22,7 +23,7 @@ export default (props: React.PropsWithChildren<Props>) => {
         case WalletType.Keplr:
           keplr(config.chainId, config.chainName, config.lcdUrl, config.rpcUrl, setClient);
           break;
-        case WalletType.LocalStorage:
+        case WalletType.LocalWallet:
           localWallet(config.lcdUrl, setClient);
       }
     }, 1000);
@@ -31,14 +32,24 @@ export default (props: React.PropsWithChildren<Props>) => {
 
   return (
     <div>
-      <h2>Loading {walletType}</h2>
+      <h2>Loading wallet</h2>
+      <p>
+        {walletType === WalletType.LocalWallet &&
+          `${walletTypeName[walletType]} should be ready shortly`}
+        {walletType === WalletType.Keplr &&
+          `Make sure you have ${walletTypeName[walletType]} extension installed`}
+      </p>
       <div>
-        <CircularProgress />
-      </div>
-      <div>
-        <Button variant="contained" color="primary" onClick={() => cancel()}>
-          Cancel
-        </Button>
+        <Grid container spacing={3} alignItems="flex-end">
+          <Grid item xs={4} sm={6}>
+            <CircularProgress />
+          </Grid>
+          <Grid item xs={8} sm={6}>
+            <Button variant="contained" color="primary" onClick={() => cancel()}>
+              Cancel
+            </Button>
+          </Grid>
+        </Grid>
       </div>
     </div>
   );
