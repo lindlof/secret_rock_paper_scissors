@@ -1,7 +1,7 @@
 import * as SecretJS from 'secretjs';
 import * as Msg from './msg';
 
-interface Game_ {
+interface Game {
   readonly contract: string;
   readonly locator: string;
   readonly player1_locator: boolean | undefined;
@@ -13,11 +13,12 @@ interface Game_ {
   readonly played: boolean;
   readonly opponentPlayed: boolean;
   readonly lastHandsign: Msg.Handsign | undefined;
+  readonly rounds: Array<Round | undefined>;
   readonly winDeadlineSeconds: number | undefined;
   readonly lossDeadlineSeconds: number | undefined;
 }
 
-interface GameUpdate_ {
+interface TickUpdate {
   readonly player1_locator: boolean | undefined;
   readonly stage: Stage;
   readonly round: number;
@@ -26,15 +27,27 @@ interface GameUpdate_ {
   readonly losses: number;
   readonly played: boolean;
   readonly opponentPlayed: boolean;
+  readonly lastHandsign?: Msg.Handsign | undefined;
+  readonly rounds: Array<Round | undefined>;
   readonly winDeadlineSeconds: number | undefined;
   readonly lossDeadlineSeconds: number | undefined;
-  readonly lastHandsign?: Msg.Handsign | undefined;
 }
 
 enum Stage {
   Lobby = 'LOBBY',
   GameOn = 'GAME_ON',
   Over = 'OVER',
+}
+
+enum Result {
+  Won = 'WON',
+  Lost = 'LOST',
+  Tie = 'TIE',
+}
+
+interface Round {
+  readonly result: Result;
+  readonly handsign: Msg.Handsign | undefined;
 }
 
 const create = (contract: string): Game => {
@@ -52,6 +65,7 @@ const create = (contract: string): Game => {
     played: false,
     opponentPlayed: false,
     lastHandsign: undefined,
+    rounds: new Array<Round | undefined>(),
     winDeadlineSeconds: undefined,
     lossDeadlineSeconds: undefined,
   };
@@ -60,8 +74,8 @@ const create = (contract: string): Game => {
 const tick = async (
   client: SecretJS.SigningCosmWasmClient,
   game: Game,
-): Promise<GameUpdate | undefined> => {
-  let gameUpdate: GameUpdate = {
+): Promise<TickUpdate | undefined> => {
+  let update: TickUpdate = {
     player1_locator: game.player1_locator,
     stage: game.stage,
     round: game.round,
@@ -70,6 +84,7 @@ const tick = async (
     losses: game.losses,
     played: game.played,
     opponentPlayed: game.opponentPlayed,
+    rounds: game.rounds,
     winDeadlineSeconds: game.winDeadlineSeconds,
     lossDeadlineSeconds: game.lossDeadlineSeconds,
   };
@@ -77,9 +92,9 @@ const tick = async (
     const lobby = await client.queryContractSmart(game.contract, {
       game_lobby: { locator: game.locator },
     });
-    if (!lobby.game_started) return undefined;
-    gameUpdate = {
-      ...gameUpdate,
+    if (!lobby.game_started) return;
+    update = {
+      ...update,
       player1_locator: lobby.player1_locator,
       stage: Stage.GameOn,
     };
@@ -93,8 +108,8 @@ const tick = async (
   const deadlineSeconds = Math.max(0, (status.deadline - height) * 6);
 
   if (game.player1_locator) {
-    gameUpdate = {
-      ...gameUpdate,
+    update = {
+      ...update,
       stage,
       round: status.round,
       won: status.player1_wins >= 3,
@@ -108,8 +123,8 @@ const tick = async (
         !status.player1_played && status.player2_played ? deadlineSeconds : undefined,
     };
   } else {
-    gameUpdate = {
-      ...gameUpdate,
+    update = {
+      ...update,
       stage,
       round: status.round,
       won: status.player2_wins >= 3,
@@ -123,10 +138,20 @@ const tick = async (
         status.player1_played && !status.player2_played ? deadlineSeconds : undefined,
     };
   }
-  if (gameUpdate.round > game.round) {
-    gameUpdate = { ...gameUpdate, lastHandsign: undefined };
+  if (update.round > game.round) {
+    const rounds = [...update.rounds];
+    let result = Result.Tie;
+    if (update.wins > game.wins) result = Result.Won;
+    else if (update.losses > game.losses) result = Result.Lost;
+    rounds[game.round - 1] = { result: result, handsign: game.lastHandsign };
+
+    update = {
+      ...update,
+      rounds,
+      lastHandsign: undefined,
+    };
   }
-  return gameUpdate;
+  return update;
 };
 
 const playHandsign = async (
@@ -149,6 +174,5 @@ const claimInactivity = async (client: SecretJS.SigningCosmWasmClient, game: Gam
   }
 };
 
-export type Game = Game_;
-export type GameUpdate = GameUpdate_;
-export { Stage, create, tick, playHandsign, claimInactivity };
+export type { Game, Round };
+export { Stage, create, tick, playHandsign, claimInactivity, Result };

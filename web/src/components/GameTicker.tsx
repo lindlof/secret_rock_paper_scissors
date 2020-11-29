@@ -14,11 +14,11 @@ export default (props: React.PropsWithChildren<Props>) => {
   useEffect(() => {
     if (!client || !game) return;
     const timer = setInterval(async () => {
-      const updatedGame = await Game.tick(client, game);
-      if (updatedGame === undefined) return;
-      setGame((g: Game.Game) => {
-        if (g === undefined) return g;
-        return { ...g, ...updatedGame };
+      const update = await Game.tick(client, game);
+      if (update === undefined) return;
+      setGame((g: Game.Game): Game.Game | undefined => {
+        if (!update) return;
+        return { ...g, ...update };
       });
     }, 2000);
     return () => clearInterval(timer);
