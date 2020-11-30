@@ -21,14 +21,29 @@ export default (props: React.PropsWithChildren<Props>) => {
     const timer = setInterval(async () => {
       switch (walletType) {
         case WalletType.Keplr:
-          keplr(config.chainId, config.chainName, config.lcdUrl, config.rpcUrl, setClient);
+          await keplr(
+            config.chainId,
+            config.chainName,
+            config.suggestChain,
+            config.lcdUrl,
+            config.rpcUrl,
+            setClient,
+          );
           break;
         case WalletType.LocalWallet:
           localWallet(config.lcdUrl, setClient);
       }
     }, 1000);
     return () => clearInterval(timer);
-  }, [walletType, config.chainId, config.chainName, config.lcdUrl, config.rpcUrl, setClient]);
+  }, [
+    walletType,
+    config.chainId,
+    config.chainName,
+    config.suggestChain,
+    config.lcdUrl,
+    config.rpcUrl,
+    setClient,
+  ]);
 
   return (
     <div>
