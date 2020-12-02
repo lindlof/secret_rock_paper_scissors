@@ -3,8 +3,9 @@ import * as Msg from './msg';
 
 interface Game {
   readonly contract: string;
+  readonly privateGame: boolean;
   readonly locator: string;
-  readonly player1_locator: boolean | undefined;
+  readonly playerNumber: number | undefined;
   readonly stage: Stage;
   readonly round: number;
   readonly won: boolean;
@@ -19,7 +20,7 @@ interface Game {
 }
 
 interface TickUpdate {
-  readonly player1_locator: boolean | undefined;
+  readonly playerNumber: number | undefined;
   readonly stage: Stage;
   readonly round: number;
   readonly won: boolean;
@@ -50,13 +51,20 @@ interface Round {
   readonly handsign: Msg.Handsign | undefined;
 }
 
-const create = (contract: string): Game => {
-  const locator = new Uint8Array(32);
-  crypto.getRandomValues(locator);
+const create = (contract: string, privateGame: boolean, joinLocator?: string): Game => {
+  let locator = joinLocator;
+  if (!locator) {
+    const randomLocator = new Uint8Array(32);
+    crypto.getRandomValues(randomLocator);
+    locator = Buffer.from(randomLocator).toString('hex');
+  }
+  let playerNumber: number | undefined;
+  if (privateGame) playerNumber = joinLocator ? 2 : 1;
   return {
     contract,
-    locator: Buffer.from(locator).toString('hex'),
-    player1_locator: undefined,
+    privateGame,
+    locator,
+    playerNumber,
     stage: Stage.Lobby,
     round: 1,
     won: false,
@@ -76,7 +84,7 @@ const tick = async (
   game: Game,
 ): Promise<TickUpdate | undefined> => {
   let update: TickUpdate = {
-    player1_locator: game.player1_locator,
+    playerNumber: game.playerNumber,
     stage: game.stage,
     round: game.round,
     won: game.won,
@@ -93,9 +101,14 @@ const tick = async (
       game_lobby: { locator: game.locator },
     });
     if (!lobby.game_started) return;
+
+    let playerNumber = update.playerNumber;
+    if (playerNumber === undefined) {
+      playerNumber = lobby.player1_locator ? 1 : 2;
+    }
     update = {
       ...update,
-      player1_locator: lobby.player1_locator,
+      playerNumber,
       stage: Stage.GameOn,
     };
   }
@@ -107,7 +120,7 @@ const tick = async (
   const stage = status.game_over ? Stage.Over : Stage.GameOn;
   const deadlineSeconds = Math.max(0, (status.deadline - height) * 6);
 
-  if (game.player1_locator) {
+  if (game.playerNumber === 1) {
     update = {
       ...update,
       stage,

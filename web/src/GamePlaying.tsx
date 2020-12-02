@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
-import { Button } from '@material-ui/core';
+import { Button, Typography, Container } from '@material-ui/core';
+import Box from '@material-ui/core/Box';
 import HandsignImg from './components/HandsignImg';
 import * as Msg from './msg';
 import * as Game from './game';
@@ -78,14 +79,25 @@ export default (props: Props) => {
     displayContent = DisplayContent.Ending;
   }
 
-  if (game?.stage === Game.Stage.Lobby) {
+  if (game.stage === Game.Stage.Lobby) {
+    const query = new URLSearchParams();
+    query.append('game', game.locator);
+    const url = `${document.location.origin}?${query.toString()}`;
     return (
-      <div>
-        <p>Waiting for Player 2 to join</p>
+      <Container fixed maxWidth="sm">
+        {game.privateGame && (
+          <>
+            <Typography>Send this link to your friend</Typography>
+            <Box bgcolor="primary.main" color="primary.contrastText" p={1}>
+              <Typography>{url}</Typography>
+            </Box>
+          </>
+        )}
+        <Typography>Waiting for other player</Typography>
         <Button variant="contained" color="primary" onClick={tryClaimInactivity}>
           Cancel game
         </Button>
-      </div>
+      </Container>
     );
   }
 

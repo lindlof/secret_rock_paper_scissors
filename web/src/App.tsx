@@ -20,6 +20,14 @@ export const App: React.FC = () => {
   const [game, setGame] = useLocalStorage<Game.Game | null | undefined>('game', undefined);
   const { enqueueSnackbar } = useSnackbar();
 
+  const url = new URL(window.location.href);
+  const gameLocator = url.searchParams.get('game');
+  if (client && gameLocator) {
+    setGame(Game.create(config.contract, true));
+    playGame(client, config.contract, true, setGame, enqueueSnackbar, gameLocator);
+    window.history.pushState('', '', document.location.origin);
+  }
+
   return (
     <div>
       <Grid container spacing={3} alignItems="flex-end">
@@ -45,13 +53,25 @@ export const App: React.FC = () => {
       {game === null && <CircularProgress />}
       {game === undefined && client && (
         <div>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => playGame(client, config.contract, setGame, enqueueSnackbar)}
-          >
-            Play
-          </Button>
+          <div>
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              onClick={() => playGame(client, config.contract, true, setGame, enqueueSnackbar)}
+            >
+              Play with Friend
+            </Button>
+          </div>
+          <div>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => playGame(client, config.contract, false, setGame, enqueueSnackbar)}
+            >
+              Play with Anyone
+            </Button>
+          </div>
         </div>
       )}
     </div>
@@ -61,14 +81,17 @@ export const App: React.FC = () => {
 const playGame = async (
   client: SecretJS.SigningCosmWasmClient,
   contract: string,
+  privateGame: boolean,
   setGame: Function,
   enqueueSnackbar: Function,
+  locator?: string,
 ) => {
   setGame(null, false);
 
-  const game = Game.create(contract);
+  const game = Game.create(contract, privateGame, locator);
+  const method = privateGame ? 'join_game' : 'private_game';
   try {
-    await client.execute(contract, { join_game: { locator: game.locator } }, undefined, [
+    await client.execute(contract, { [method]: { locator: game.locator } }, undefined, [
       {
         amount: '10000000',
         denom: 'uscrt',
@@ -82,7 +105,7 @@ const playGame = async (
       return;
     }
   }
-  setGame(game);
+  setGame(game, privateGame);
 };
 
 const playHandsign = async (

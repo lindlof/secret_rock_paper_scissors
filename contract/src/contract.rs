@@ -24,6 +24,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<HandleResponse> {
     match msg {
         HandleMsg::JoinGame { locator } => join_game(deps, env, locator),
+        HandleMsg::PrivateGame { locator } => private_game(deps, env, locator),
         HandleMsg::PlayHand { locator, handsign } => play_hand(deps, env, locator, handsign),
         HandleMsg::ClaimInactivity { locator } => claim_inactivity(deps, env, locator),
     }
@@ -146,6 +147,36 @@ pub fn join_game<S: Storage, A: Api, Q: Querier>(
     Ok(HandleResponse::default())
 }
 
+pub fn private_game<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    env: Env,
+    locator: String,
+) -> StdResult<HandleResponse> {
+    let funds = &env.message.sent_funds[0];
+    if funds.denom != FUNDING_DENOM || funds.amount < Uint128(FUNDING_AMOUNT) {
+        return Err(StdError::generic_err(
+            "insufficient_funds 100000 uscrt required",
+        ));
+    }
+    let mut loc_b = [0u8; 32];
+    match hex::decode_to_slice(locator, &mut loc_b as &mut [u8]) {
+        Err(_) => return Err(StdError::generic_err("bad_request invalid_locator")),
+        Ok(_) => (),
+    }
+    match Locator::load(&deps.storage, loc_b) {
+        Err(_) => {
+            // player1 goes to lobby to wait for player2
+            Locator::new(loc_b, loc_b, env.message.sender).save(&mut deps.storage);
+        }
+        Ok(l) => {
+            // player2 joins player1
+            let game = Game::new(l.game, l.player, env.message.sender);
+            game.save(&mut deps.storage);
+        }
+    }
+    Ok(HandleResponse::default())
+}
+
 pub fn claim_inactivity<S: Storage, A: Api, Q: Querier>(
     deps: &mut Extern<S, A, Q>,
     env: Env,
@@ -223,8 +254,7 @@ fn game_lobby<S: Storage, A: Api, Q: Querier>(
         Ok(_) => (),
     }
     let locator = Locator::load(&deps.storage, bytes)?;
-    let game = Game::may_load(&deps.storage, locator.game)?;
-    match game {
+    match Game::may_load(&deps.storage, locator.game)? {
         None => Ok(GameLobbyResponse {
             game_started: false,
             player1_locator: false,
