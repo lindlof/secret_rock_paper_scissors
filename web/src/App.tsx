@@ -19,14 +19,7 @@ export const App: React.FC = () => {
   const [client, setClient] = useState<SecretJS.SigningCosmWasmClient | undefined>();
   const [game, setGame] = useLocalStorage<Game.Game | null | undefined>('game', undefined);
   const { enqueueSnackbar } = useSnackbar();
-
-  const url = new URL(window.location.href);
-  const gameLocator = url.searchParams.get('game');
-  if (client && gameLocator) {
-    setGame(Game.create(config.contract, true));
-    playGame(client, config.contract, true, setGame, enqueueSnackbar, gameLocator);
-    window.history.pushState('', '', document.location.origin);
-  }
+  routeUrl(client, setGame, enqueueSnackbar);
 
   return (
     <div>
@@ -89,7 +82,7 @@ const playGame = async (
   setGame(null, false);
 
   const game = Game.create(contract, privateGame, locator);
-  const method = privateGame ? 'join_game' : 'private_game';
+  const method = privateGame ? 'private_game' : 'join_game';
   try {
     await client.execute(contract, { [method]: { locator: game.locator } }, undefined, [
       {
@@ -105,7 +98,20 @@ const playGame = async (
       return;
     }
   }
-  setGame(game, privateGame);
+  setGame(game);
+};
+
+const routeUrl = (
+  client: SecretJS.SigningCosmWasmClient | undefined,
+  setGame: Function,
+  enqueueSnackbar: Function,
+) => {
+  const url = new URL(window.location.href);
+  const joinLocator = url.searchParams.get('game');
+  if (client && joinLocator) {
+    playGame(client, config.contract, true, setGame, enqueueSnackbar, joinLocator);
+    window.history.pushState('', '', document.location.origin);
+  }
 };
 
 const playHandsign = async (

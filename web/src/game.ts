@@ -53,19 +53,28 @@ interface Round {
 
 const create = (contract: string, privateGame: boolean, joinLocator?: string): Game => {
   let locator = joinLocator;
+  let playerNumber: number | undefined;
+  let stage = Stage.Lobby;
   if (!locator) {
     const randomLocator = new Uint8Array(32);
     crypto.getRandomValues(randomLocator);
     locator = Buffer.from(randomLocator).toString('hex');
   }
-  let playerNumber: number | undefined;
-  if (privateGame) playerNumber = joinLocator ? 2 : 1;
+
+  if (privateGame) {
+    if (joinLocator !== undefined) {
+      playerNumber = 2;
+      stage = Stage.GameOn;
+    } else {
+      playerNumber = 1;
+    }
+  }
   return {
     contract,
     privateGame,
     locator,
     playerNumber,
-    stage: Stage.Lobby,
+    stage,
     round: 1,
     won: false,
     wins: 0,

@@ -146,7 +146,7 @@ export default (props: Props) => {
                 {game.lossDeadlineSeconds !== undefined && game.lossDeadlineSeconds > 0 && (
                   <p>You have {game.lossDeadlineSeconds}s</p>
                 )}
-                {game.lossDeadlineSeconds !== undefined && game.lossDeadlineSeconds === 0 && (
+                {game.lossDeadlineSeconds === 0 && (
                   <p>Play before opponent claims victory for inactivity</p>
                 )}
               </div>
