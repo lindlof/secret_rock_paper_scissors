@@ -36,7 +36,7 @@ impl Locator {
         Ok(Self { id, ..data })
     }
 
-    pub fn may_load<S: Storage>(&self, storage: &S, id: [u8; 32]) -> StdResult<Option<Self>> {
+    pub fn may_load<S: Storage>(storage: &S, id: [u8; 32]) -> StdResult<Option<Self>> {
         let mut space = prefixed_read(b"lobby", storage);
         let bucket = typed_read::<_, Locator>(&mut space);
         bucket

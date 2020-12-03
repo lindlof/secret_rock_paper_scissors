@@ -163,12 +163,12 @@ pub fn private_game<S: Storage, A: Api, Q: Querier>(
         Err(_) => return Err(StdError::generic_err("bad_request invalid_locator")),
         Ok(_) => (),
     }
-    match Locator::load(&deps.storage, loc_b) {
-        Err(_) => {
-            // player1 goes to lobby to wait for player2
+    match Locator::may_load(&deps.storage, loc_b)? {
+        None => {
+            // player1 waits for player2
             Locator::new(loc_b, loc_b, env.message.sender).save(&mut deps.storage);
         }
-        Ok(l) => {
+        Some(l) => {
             // player2 joins player1
             let game = Game::new(l.game, l.player, env.message.sender);
             game.save(&mut deps.storage);
