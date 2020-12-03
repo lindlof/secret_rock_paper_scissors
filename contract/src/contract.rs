@@ -452,6 +452,47 @@ mod tests {
     }
 
     #[test]
+    fn private_game_matching() {
+        let mut deps = mock_dependencies(20, &coins(0, "uscrt"));
+        let env = mock_env("creator", &[]);
+        let msg = InitMsg {};
+        let _res = init(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player1", &coins(FUNDING_AMOUNT, "uscrt"));
+        let msg = HandleMsg::PrivateGame { locator: loc(5) };
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        // JoinGame shouldn't interfere
+        let env = mock_env("player3", &coins(FUNDING_AMOUNT, "uscrt"));
+        let msg = HandleMsg::JoinGame { locator: loc(1) };
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player2", &coins(FUNDING_AMOUNT, "uscrt"));
+        let msg = HandleMsg::PrivateGame { locator: loc(5) };
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player1", &coins(1000, "token"));
+        let msg = HandleMsg::PlayHand {
+            locator: loc(5),
+            handsign: Handsign::ROCK,
+        };
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player2", &coins(2, "token"));
+        let msg = HandleMsg::PlayHand {
+            locator: loc(5),
+            handsign: Handsign::PAPR,
+        };
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        let res = query(&deps, QueryMsg::GameStatus { locator: loc(5) }).unwrap();
+        let value: GameStatusResponse = from_binary(&res).unwrap();
+        assert_eq!(0, value.player1_wins);
+        assert_eq!(1, value.player2_wins);
+        assert_eq!(false, value.game_over);
+    }
+
+    #[test]
     fn claim_opponent_inactivity() {
         let mut deps = mock_dependencies(20, &coins(0, "uscrt"));
         let env = mock_env("creator", &[]);
@@ -514,6 +555,7 @@ mod tests {
         let msg = HandleMsg::ClaimInactivity { locator: loc(1) };
         handle(&mut deps, env, msg).unwrap_err();
     }
+
     #[test]
     fn claim_lobby_inactivity() {
         let mut deps = mock_dependencies(20, &coins(0, "uscrt"));
