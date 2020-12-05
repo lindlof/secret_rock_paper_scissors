@@ -34,6 +34,11 @@ const useStyles = makeStyles((theme) => ({
     textAlign: 'right',
     margin: '1em',
   },
+  url: {
+    wordWrap: 'break-word',
+    wordBreak: 'break-all',
+    height: '100%',
+  },
 }));
 
 interface Props {
@@ -41,6 +46,7 @@ interface Props {
   playHandsign: Function;
   leaveGame: Function;
   claimInactivity: () => Promise<void>;
+  enqueueSnackbar: Function;
 }
 
 enum DisplayContent {
@@ -52,7 +58,7 @@ enum DisplayContent {
 
 export default (props: Props) => {
   const classes = useStyles();
-  const { game, playHandsign, leaveGame, claimInactivity } = props;
+  const { game, playHandsign, leaveGame, claimInactivity, enqueueSnackbar } = props;
   const [pickedRound, setPickedRound] = useState<number>();
   const [claimingInactivity, setClaimingInactivity] = useState<boolean>(false);
   const pickHandsign = (handsign: Msg.Handsign) => {
@@ -88,9 +94,29 @@ export default (props: Props) => {
         {game.privateGame && (
           <>
             <Typography>Send this link to your friend</Typography>
-            <Box bgcolor="primary.main" color="primary.contrastText" p={1}>
-              <Typography>{url}</Typography>
-            </Box>
+
+            <Grid container>
+              <Grid item sm={9} xs={12}>
+                <Box bgcolor="primary.main" color="primary.contrastText" p={1}>
+                  <Typography className={classes.url}>{url}</Typography>
+                </Box>
+              </Grid>
+              <Grid item sm={3} xs={12}>
+                <Button
+                  variant="contained"
+                  color="secondary"
+                  component="div"
+                  fullWidth
+                  className={classes.url}
+                  onClick={() => {
+                    navigator.clipboard.writeText(url);
+                    enqueueSnackbar('Join link copied', { variant: 'success' });
+                  }}
+                >
+                  Copy
+                </Button>
+              </Grid>
+            </Grid>
           </>
         )}
         <Typography>Waiting for other player</Typography>

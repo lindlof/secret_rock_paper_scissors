@@ -23,12 +23,14 @@ export const App: React.FC = () => {
 
   return (
     <div>
-      <Grid container spacing={3} alignItems="flex-end">
+      <Grid container spacing={3} justify="flex-end">
         <Grid item xs={12} sm={8}>
           <Banner />
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Wallet client={client} setClient={setClient} faucetUrl={config.faucetUrl} />
+          <Grid container justify="flex-end">
+            <Wallet client={client} setClient={setClient} faucetUrl={config.faucetUrl} />
+          </Grid>
         </Grid>
       </Grid>
       {client && game && (
@@ -40,13 +42,14 @@ export const App: React.FC = () => {
             }
             leaveGame={() => setGame(undefined)}
             claimInactivity={() => claimInactivity(client, game, setGame, enqueueSnackbar)}
+            enqueueSnackbar={enqueueSnackbar}
           />
         </GameTicker>
       )}
       {game === null && <CircularProgress />}
       {game === undefined && client && (
-        <div>
-          <div>
+        <Grid container direction="column" justify="center" alignItems="center" spacing={1}>
+          <Grid item xs={12}>
             <Button
               variant="contained"
               color="primary"
@@ -55,8 +58,8 @@ export const App: React.FC = () => {
             >
               Play with Friend
             </Button>
-          </div>
-          <div>
+          </Grid>
+          <Grid item xs={12}>
             <Button
               variant="contained"
               color="primary"
@@ -64,8 +67,8 @@ export const App: React.FC = () => {
             >
               Play with Anyone
             </Button>
-          </div>
-        </div>
+          </Grid>
+        </Grid>
       )}
     </div>
   );
