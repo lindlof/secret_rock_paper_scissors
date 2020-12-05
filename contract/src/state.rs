@@ -12,6 +12,7 @@ pub struct Locator {
     id: [u8; 32],
     pub game: [u8; 32],
     pub player: HumanAddr,
+    pub canceled: bool,
 }
 
 impl Locator {
@@ -20,6 +21,7 @@ impl Locator {
             id: id,
             game: game,
             player: player,
+            canceled: false,
         }
     }
 

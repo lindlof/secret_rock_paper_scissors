@@ -135,6 +135,9 @@ pub fn join_game<S: Storage, A: Api, Q: Querier>(
         Some(s) => {
             // player2 joins player1 and lobby becomes empty
             let p1_locator = Locator::load(&mut deps.storage, s)?;
+            if p1_locator.canceled {
+                return Err(StdError::generic_err("forbidden game canceled"));
+            }
             let game_id = p1_locator.game;
             let p2_locator = Locator::new(loc_b, game_id, env.message.sender);
             p2_locator.save(&mut deps.storage);
@@ -170,6 +173,9 @@ pub fn private_game<S: Storage, A: Api, Q: Querier>(
         }
         Some(l) => {
             // player2 joins player1
+            if l.canceled {
+                return Err(StdError::generic_err("forbidden game canceled"));
+            }
             let game = Game::new(l.game, l.player, env.message.sender);
             game.save(&mut deps.storage);
         }
@@ -187,27 +193,28 @@ pub fn claim_inactivity<S: Storage, A: Api, Q: Querier>(
         Err(_) => return Err(StdError::generic_err("bad_request invalid_locator")),
         Ok(_) => (),
     }
-    let locator = Locator::load(&deps.storage, bytes)?;
+    let mut locator = Locator::load(&deps.storage, bytes)?;
+    if locator.canceled {
+        return Err(StdError::generic_err("forbidden game canceled"));
+    }
     let mut game;
 
-    match Game::load(&deps.storage, locator.game) {
-        Err(_) => {
-            match lobby_game(&mut deps.storage).load()? {
-                None => return Err(StdError::generic_err("not_found No game or lobby found")),
-                Some(s) => {
-                    if s != bytes {
-                        return Err(StdError::generic_err("not_found No game or lobby match"));
-                    }
+    match Game::may_load(&deps.storage, locator.game)? {
+        None => {
+            if let Some(l) = lobby_game(&mut deps.storage).load()? {
+                if l == bytes {
                     lobby_game(&mut deps.storage).save(&None)?;
-                    return Ok(payout(
-                        env.contract.address,
-                        env.message.sender,
-                        Uint128(FUNDING_AMOUNT),
-                    ));
                 }
-            };
+            }
+            locator.canceled = true;
+            locator.save(&mut deps.storage);
+            return Ok(payout(
+                env.contract.address,
+                env.message.sender,
+                Uint128(FUNDING_AMOUNT),
+            ));
         }
-        Ok(g) => game = g,
+        Some(g) => game = g,
     }
 
     if game.game_over {
