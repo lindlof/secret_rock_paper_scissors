@@ -597,8 +597,60 @@ mod tests {
             }
         }
 
+        // Can't double-claim
         let env = mock_env("player1", &[]);
         let msg = HandleMsg::ClaimInactivity { locator: loc(1) };
+        handle(&mut deps, env, msg).unwrap_err();
+
+        // Lobby becomes empty
+        let env = mock_env("player2", &coins(FUNDING_AMOUNT, "uscrt"));
+        let msg = HandleMsg::JoinGame { locator: loc(2) };
+        handle(&mut deps, env, msg).unwrap();
+
+        let msg = QueryMsg::GameLobby { locator: loc(2) };
+        let res = query(&deps, msg).unwrap();
+        let value: GameLobbyResponse = from_binary(&res).unwrap();
+        assert_eq!(false, value.game_started);
+    }
+
+    #[test]
+    fn claim_private_lobby_inactivity() {
+        let mut deps = mock_dependencies(20, &coins(0, "uscrt"));
+        let env = mock_env("creator", &[]);
+        let msg = InitMsg {};
+        init(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player1", &coins(FUNDING_AMOUNT, "uscrt"));
+        let msg = HandleMsg::PrivateGame { locator: loc(5) };
+        handle(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player1", &[]);
+        let msg = HandleMsg::ClaimInactivity { locator: loc(5) };
+        let res = handle(&mut deps, env, msg).unwrap();
+
+        assert_eq!(res.messages.len(), 1);
+        match &res.messages[0] {
+            CosmosMsg::Bank(BankMsg::Send {
+                to_address, amount, ..
+            }) => {
+                assert_eq!(to_address.as_str(), "player1");
+                assert_eq!(amount.len(), 1);
+                assert_eq!(amount[0].denom, "uscrt");
+                assert_eq!(amount[0].amount, Uint128(FUNDING_AMOUNT));
+            }
+            _ => {
+                panic!("Expected claim for inactivity");
+            }
+        }
+
+        // Can't double-claim
+        let env = mock_env("player1", &[]);
+        let msg = HandleMsg::ClaimInactivity { locator: loc(5) };
+        handle(&mut deps, env, msg).unwrap_err();
+
+        // Lobby becomes non-joinable
+        let env = mock_env("player2", &coins(FUNDING_AMOUNT, "uscrt"));
+        let msg = HandleMsg::PrivateGame { locator: loc(5) };
         handle(&mut deps, env, msg).unwrap_err();
     }
 
