@@ -17,7 +17,11 @@ const config = envConfig();
 
 export const App: React.FC = () => {
   const [client, setClient] = useState<SecretJS.SigningCosmWasmClient | undefined>();
-  const [game, setGame] = useLocalStorage<Game.Game | null | undefined>('game', undefined);
+  const [game, setGame] = useLocalStorage<Game.Game | null | undefined>(
+    'game',
+    undefined,
+    Game.defaults,
+  );
   const { enqueueSnackbar } = useSnackbar();
   routeUrl(client, setGame, enqueueSnackbar);
 

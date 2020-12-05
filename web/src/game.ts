@@ -51,6 +51,24 @@ interface Round {
   readonly handsign: Msg.Handsign | undefined;
 }
 
+const defaults = Object.freeze({
+  contract: '',
+  privateGame: false,
+  locator: '',
+  playerNumber: 1,
+  stage: Stage.Lobby,
+  round: 1,
+  won: false,
+  wins: 0,
+  losses: 0,
+  played: false,
+  opponentPlayed: false,
+  lastHandsign: undefined,
+  rounds: new Array<Round | undefined>(),
+  winDeadlineSeconds: undefined,
+  lossDeadlineSeconds: undefined,
+});
+
 const create = (contract: string, privateGame: boolean, joinLocator?: string): Game => {
   let locator = joinLocator;
   let playerNumber: number | undefined;
@@ -70,21 +88,12 @@ const create = (contract: string, privateGame: boolean, joinLocator?: string): G
     }
   }
   return {
+    ...defaults,
     contract,
     privateGame,
     locator,
     playerNumber,
     stage,
-    round: 1,
-    won: false,
-    wins: 0,
-    losses: 0,
-    played: false,
-    opponentPlayed: false,
-    lastHandsign: undefined,
-    rounds: new Array<Round | undefined>(),
-    winDeadlineSeconds: undefined,
-    lossDeadlineSeconds: undefined,
   };
 };
 
@@ -197,4 +206,4 @@ const claimInactivity = async (client: SecretJS.SigningCosmWasmClient, game: Gam
 };
 
 export type { Game, Round };
-export { Stage, create, tick, playHandsign, claimInactivity, Result };
+export { Stage, create, tick, playHandsign, claimInactivity, Result, defaults };
