@@ -91,38 +91,42 @@ export default (props: Props) => {
     const url = `${document.location.origin}?${query.toString()}`;
     return (
       <Container fixed maxWidth="sm">
-        {game.privateGame && (
-          <>
-            <Typography>Send this link to your friend</Typography>
+        <Grid container spacing={4}>
+          {game.privateGame && (
+            <Grid item>
+              <Typography>Send this link to your friend</Typography>
 
-            <Grid container>
-              <Grid item sm={9} xs={12}>
-                <Box bgcolor="primary.main" color="primary.contrastText" p={1}>
-                  <Typography className={classes.url}>{url}</Typography>
-                </Box>
-              </Grid>
-              <Grid item sm={3} xs={12}>
-                <Button
-                  variant="contained"
-                  color="secondary"
-                  component="div"
-                  fullWidth
-                  className={classes.url}
-                  onClick={() => {
-                    navigator.clipboard.writeText(url);
-                    enqueueSnackbar('Join link copied', { variant: 'success' });
-                  }}
-                >
-                  Copy
-                </Button>
+              <Grid container>
+                <Grid item sm={9} xs={12}>
+                  <Box bgcolor="primary.main" color="primary.contrastText" p={1}>
+                    <Typography className={classes.url}>{url}</Typography>
+                  </Box>
+                </Grid>
+                <Grid item sm={3} xs={12}>
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    component="div"
+                    fullWidth
+                    className={classes.url}
+                    onClick={() => {
+                      navigator.clipboard.writeText(url);
+                      enqueueSnackbar('Join link copied to clipboard', { variant: 'success' });
+                    }}
+                  >
+                    Copy
+                  </Button>
+                </Grid>
               </Grid>
             </Grid>
-          </>
-        )}
-        <Typography>Waiting for other player</Typography>
-        <Button variant="contained" color="primary" onClick={tryClaimInactivity}>
-          Cancel game
-        </Button>
+          )}
+          <Grid item>
+            <Typography>Waiting for other player</Typography>
+            <Button variant="contained" color="primary" onClick={tryClaimInactivity}>
+              Cancel game
+            </Button>
+          </Grid>
+        </Grid>
       </Container>
     );
   }
