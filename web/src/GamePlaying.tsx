@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import Grid from '@material-ui/core/Grid';
-import { Button } from '@material-ui/core';
+import { Button, Typography, Container } from '@material-ui/core';
+import Box from '@material-ui/core/Box';
 import HandsignImg from './components/HandsignImg';
 import * as Msg from './msg';
 import * as Game from './game';
@@ -33,6 +34,11 @@ const useStyles = makeStyles((theme) => ({
     textAlign: 'right',
     margin: '1em',
   },
+  url: {
+    wordWrap: 'break-word',
+    wordBreak: 'break-all',
+    height: '100%',
+  },
 }));
 
 interface Props {
@@ -40,6 +46,7 @@ interface Props {
   playHandsign: Function;
   leaveGame: Function;
   claimInactivity: () => Promise<void>;
+  enqueueSnackbar: Function;
 }
 
 enum DisplayContent {
@@ -51,7 +58,7 @@ enum DisplayContent {
 
 export default (props: Props) => {
   const classes = useStyles();
-  const { game, playHandsign, leaveGame, claimInactivity } = props;
+  const { game, playHandsign, leaveGame, claimInactivity, enqueueSnackbar } = props;
   const [pickedRound, setPickedRound] = useState<number>();
   const [claimingInactivity, setClaimingInactivity] = useState<boolean>(false);
   const pickHandsign = (handsign: Msg.Handsign) => {
@@ -78,14 +85,49 @@ export default (props: Props) => {
     displayContent = DisplayContent.Ending;
   }
 
-  if (game?.stage === Game.Stage.Lobby) {
+  if (game.stage === Game.Stage.Lobby) {
+    const query = new URLSearchParams();
+    query.append('game', game.locator);
+    const url = `${document.location.origin}?${query.toString()}`;
     return (
-      <div>
-        <p>Waiting for Player 2 to join</p>
-        <Button variant="contained" color="primary" onClick={tryClaimInactivity}>
-          Cancel game
-        </Button>
-      </div>
+      <Container fixed maxWidth="sm">
+        <Grid container spacing={4}>
+          {game.privateGame && (
+            <Grid item>
+              <Typography>Send this link to your friend</Typography>
+
+              <Grid container>
+                <Grid item sm={9} xs={12}>
+                  <Box bgcolor="primary.main" color="primary.contrastText" p={1}>
+                    <Typography className={classes.url}>{url}</Typography>
+                  </Box>
+                </Grid>
+                <Grid item sm={3} xs={12}>
+                  <Button
+                    variant="contained"
+                    color="secondary"
+                    component="div"
+                    fullWidth
+                    className={classes.url}
+                    onClick={() => {
+                      navigator.clipboard.writeText(url);
+                      enqueueSnackbar('Join link copied to clipboard', { variant: 'success' });
+                    }}
+                  >
+                    Copy
+                  </Button>
+                </Grid>
+              </Grid>
+            </Grid>
+          )}
+          <Grid item>
+            <Typography>Waiting for other player</Typography>
+            <Button variant="contained" color="primary" onClick={tryClaimInactivity}>
+              Cancel game
+            </Button>
+          </Grid>
+        </Grid>
+      </Container>
     );
   }
 
@@ -134,7 +176,7 @@ export default (props: Props) => {
                 {game.lossDeadlineSeconds !== undefined && game.lossDeadlineSeconds > 0 && (
                   <p>You have {game.lossDeadlineSeconds}s</p>
                 )}
-                {game.lossDeadlineSeconds !== undefined && game.lossDeadlineSeconds === 0 && (
+                {game.lossDeadlineSeconds === 0 && (
                   <p>Play before opponent claims victory for inactivity</p>
                 )}
               </div>

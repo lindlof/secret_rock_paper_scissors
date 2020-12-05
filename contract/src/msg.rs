@@ -9,6 +9,7 @@ pub struct InitMsg {}
 #[serde(rename_all = "snake_case")]
 pub enum HandleMsg {
     JoinGame { locator: String },
+    PrivateGame { locator: String },
     PlayHand { locator: String, handsign: Handsign },
     ClaimInactivity { locator: String },
 }

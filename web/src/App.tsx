@@ -17,17 +17,24 @@ const config = envConfig();
 
 export const App: React.FC = () => {
   const [client, setClient] = useState<SecretJS.SigningCosmWasmClient | undefined>();
-  const [game, setGame] = useLocalStorage<Game.Game | null | undefined>('game', undefined);
+  const [game, setGame] = useLocalStorage<Game.Game | null | undefined>(
+    'game',
+    undefined,
+    Game.defaults,
+  );
   const { enqueueSnackbar } = useSnackbar();
+  routeUrl(client, setGame, enqueueSnackbar);
 
   return (
     <div>
-      <Grid container spacing={3} alignItems="flex-end">
+      <Grid container spacing={3} justify="flex-end">
         <Grid item xs={12} sm={8}>
           <Banner />
         </Grid>
         <Grid item xs={12} sm={4}>
-          <Wallet client={client} setClient={setClient} faucetUrl={config.faucetUrl} />
+          <Grid container justify="flex-end">
+            <Wallet client={client} setClient={setClient} faucetUrl={config.faucetUrl} />
+          </Grid>
         </Grid>
       </Grid>
       {client && game && (
@@ -39,20 +46,33 @@ export const App: React.FC = () => {
             }
             leaveGame={() => setGame(undefined)}
             claimInactivity={() => claimInactivity(client, game, setGame, enqueueSnackbar)}
+            enqueueSnackbar={enqueueSnackbar}
           />
         </GameTicker>
       )}
       {game === null && <CircularProgress />}
       {game === undefined && client && (
-        <div>
-          <Button
-            variant="contained"
-            color="primary"
-            onClick={() => playGame(client, config.contract, setGame, enqueueSnackbar)}
-          >
-            Play
-          </Button>
-        </div>
+        <Grid container direction="column" justify="center" alignItems="center" spacing={1}>
+          <Grid item xs={12}>
+            <Button
+              variant="contained"
+              color="primary"
+              size="large"
+              onClick={() => playGame(client, config.contract, true, setGame, enqueueSnackbar)}
+            >
+              Play with Friend
+            </Button>
+          </Grid>
+          <Grid item xs={12}>
+            <Button
+              variant="contained"
+              color="primary"
+              onClick={() => playGame(client, config.contract, false, setGame, enqueueSnackbar)}
+            >
+              Play with Anyone
+            </Button>
+          </Grid>
+        </Grid>
       )}
     </div>
   );
@@ -61,14 +81,17 @@ export const App: React.FC = () => {
 const playGame = async (
   client: SecretJS.SigningCosmWasmClient,
   contract: string,
+  privateGame: boolean,
   setGame: Function,
   enqueueSnackbar: Function,
+  locator?: string,
 ) => {
   setGame(null, false);
 
-  const game = Game.create(contract);
+  const game = Game.create(contract, privateGame, locator);
+  const method = privateGame ? 'private_game' : 'join_game';
   try {
-    await client.execute(contract, { join_game: { locator: game.locator } }, undefined, [
+    await client.execute(contract, { [method]: { locator: game.locator } }, undefined, [
       {
         amount: '10000000',
         denom: 'uscrt',
@@ -83,6 +106,19 @@ const playGame = async (
     }
   }
   setGame(game);
+};
+
+const routeUrl = (
+  client: SecretJS.SigningCosmWasmClient | undefined,
+  setGame: Function,
+  enqueueSnackbar: Function,
+) => {
+  const url = new URL(window.location.href);
+  const joinLocator = url.searchParams.get('game');
+  if (client && joinLocator) {
+    playGame(client, config.contract, true, setGame, enqueueSnackbar, joinLocator);
+    window.history.pushState('', '', document.location.origin);
+  }
 };
 
 const playHandsign = async (

@@ -12,6 +12,7 @@ pub struct Locator {
     id: [u8; 32],
     pub game: [u8; 32],
     pub player: HumanAddr,
+    pub canceled: bool,
 }
 
 impl Locator {
@@ -20,6 +21,7 @@ impl Locator {
             id: id,
             game: game,
             player: player,
+            canceled: false,
         }
     }
 
@@ -36,7 +38,7 @@ impl Locator {
         Ok(Self { id, ..data })
     }
 
-    pub fn may_load<S: Storage>(&self, storage: &S, id: [u8; 32]) -> StdResult<Option<Self>> {
+    pub fn may_load<S: Storage>(storage: &S, id: [u8; 32]) -> StdResult<Option<Self>> {
         let mut space = prefixed_read(b"lobby", storage);
         let bucket = typed_read::<_, Locator>(&mut space);
         bucket

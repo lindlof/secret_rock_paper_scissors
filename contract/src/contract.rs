@@ -24,6 +24,7 @@ pub fn handle<S: Storage, A: Api, Q: Querier>(
 ) -> StdResult<HandleResponse> {
     match msg {
         HandleMsg::JoinGame { locator } => join_game(deps, env, locator),
+        HandleMsg::PrivateGame { locator } => private_game(deps, env, locator),
         HandleMsg::PlayHand { locator, handsign } => play_hand(deps, env, locator, handsign),
         HandleMsg::ClaimInactivity { locator } => claim_inactivity(deps, env, locator),
     }
@@ -134,6 +135,9 @@ pub fn join_game<S: Storage, A: Api, Q: Querier>(
         Some(s) => {
             // player2 joins player1 and lobby becomes empty
             let p1_locator = Locator::load(&mut deps.storage, s)?;
+            if p1_locator.canceled {
+                return Err(StdError::generic_err("forbidden game canceled"));
+            }
             let game_id = p1_locator.game;
             let p2_locator = Locator::new(loc_b, game_id, env.message.sender);
             p2_locator.save(&mut deps.storage);
@@ -143,6 +147,39 @@ pub fn join_game<S: Storage, A: Api, Q: Querier>(
         }
     };
 
+    Ok(HandleResponse::default())
+}
+
+pub fn private_game<S: Storage, A: Api, Q: Querier>(
+    deps: &mut Extern<S, A, Q>,
+    env: Env,
+    locator: String,
+) -> StdResult<HandleResponse> {
+    let funds = &env.message.sent_funds[0];
+    if funds.denom != FUNDING_DENOM || funds.amount < Uint128(FUNDING_AMOUNT) {
+        return Err(StdError::generic_err(
+            "insufficient_funds 100000 uscrt required",
+        ));
+    }
+    let mut loc_b = [0u8; 32];
+    match hex::decode_to_slice(locator, &mut loc_b as &mut [u8]) {
+        Err(_) => return Err(StdError::generic_err("bad_request invalid_locator")),
+        Ok(_) => (),
+    }
+    match Locator::may_load(&deps.storage, loc_b)? {
+        None => {
+            // player1 waits for player2
+            Locator::new(loc_b, loc_b, env.message.sender).save(&mut deps.storage);
+        }
+        Some(l) => {
+            // player2 joins player1
+            if l.canceled {
+                return Err(StdError::generic_err("forbidden game canceled"));
+            }
+            let game = Game::new(l.game, l.player, env.message.sender);
+            game.save(&mut deps.storage);
+        }
+    }
     Ok(HandleResponse::default())
 }
 
@@ -156,27 +193,28 @@ pub fn claim_inactivity<S: Storage, A: Api, Q: Querier>(
         Err(_) => return Err(StdError::generic_err("bad_request invalid_locator")),
         Ok(_) => (),
     }
-    let locator = Locator::load(&deps.storage, bytes)?;
+    let mut locator = Locator::load(&deps.storage, bytes)?;
+    if locator.canceled {
+        return Err(StdError::generic_err("forbidden game canceled"));
+    }
     let mut game;
 
-    match Game::load(&deps.storage, locator.game) {
-        Err(_) => {
-            match lobby_game(&mut deps.storage).load()? {
-                None => return Err(StdError::generic_err("not_found No game or lobby found")),
-                Some(s) => {
-                    if s != bytes {
-                        return Err(StdError::generic_err("not_found No game or lobby match"));
-                    }
+    match Game::may_load(&deps.storage, locator.game)? {
+        None => {
+            if let Some(l) = lobby_game(&mut deps.storage).load()? {
+                if l == bytes {
                     lobby_game(&mut deps.storage).save(&None)?;
-                    return Ok(payout(
-                        env.contract.address,
-                        env.message.sender,
-                        Uint128(FUNDING_AMOUNT),
-                    ));
                 }
-            };
+            }
+            locator.canceled = true;
+            locator.save(&mut deps.storage);
+            return Ok(payout(
+                env.contract.address,
+                env.message.sender,
+                Uint128(FUNDING_AMOUNT),
+            ));
         }
-        Ok(g) => game = g,
+        Some(g) => game = g,
     }
 
     if game.game_over {
@@ -223,8 +261,7 @@ fn game_lobby<S: Storage, A: Api, Q: Querier>(
         Ok(_) => (),
     }
     let locator = Locator::load(&deps.storage, bytes)?;
-    let game = Game::may_load(&deps.storage, locator.game)?;
-    match game {
+    match Game::may_load(&deps.storage, locator.game)? {
         None => Ok(GameLobbyResponse {
             game_started: false,
             player1_locator: false,
@@ -422,6 +459,47 @@ mod tests {
     }
 
     #[test]
+    fn private_game_matching() {
+        let mut deps = mock_dependencies(20, &coins(0, "uscrt"));
+        let env = mock_env("creator", &[]);
+        let msg = InitMsg {};
+        let _res = init(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player1", &coins(FUNDING_AMOUNT, "uscrt"));
+        let msg = HandleMsg::PrivateGame { locator: loc(5) };
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        // JoinGame shouldn't interfere
+        let env = mock_env("player3", &coins(FUNDING_AMOUNT, "uscrt"));
+        let msg = HandleMsg::JoinGame { locator: loc(1) };
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player2", &coins(FUNDING_AMOUNT, "uscrt"));
+        let msg = HandleMsg::PrivateGame { locator: loc(5) };
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player1", &coins(1000, "token"));
+        let msg = HandleMsg::PlayHand {
+            locator: loc(5),
+            handsign: Handsign::ROCK,
+        };
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player2", &coins(2, "token"));
+        let msg = HandleMsg::PlayHand {
+            locator: loc(5),
+            handsign: Handsign::PAPR,
+        };
+        let _res = handle(&mut deps, env, msg).unwrap();
+
+        let res = query(&deps, QueryMsg::GameStatus { locator: loc(5) }).unwrap();
+        let value: GameStatusResponse = from_binary(&res).unwrap();
+        assert_eq!(0, value.player1_wins);
+        assert_eq!(1, value.player2_wins);
+        assert_eq!(false, value.game_over);
+    }
+
+    #[test]
     fn claim_opponent_inactivity() {
         let mut deps = mock_dependencies(20, &coins(0, "uscrt"));
         let env = mock_env("creator", &[]);
@@ -484,6 +562,7 @@ mod tests {
         let msg = HandleMsg::ClaimInactivity { locator: loc(1) };
         handle(&mut deps, env, msg).unwrap_err();
     }
+
     #[test]
     fn claim_lobby_inactivity() {
         let mut deps = mock_dependencies(20, &coins(0, "uscrt"));
@@ -518,8 +597,60 @@ mod tests {
             }
         }
 
+        // Can't double-claim
         let env = mock_env("player1", &[]);
         let msg = HandleMsg::ClaimInactivity { locator: loc(1) };
+        handle(&mut deps, env, msg).unwrap_err();
+
+        // Lobby becomes empty
+        let env = mock_env("player2", &coins(FUNDING_AMOUNT, "uscrt"));
+        let msg = HandleMsg::JoinGame { locator: loc(2) };
+        handle(&mut deps, env, msg).unwrap();
+
+        let msg = QueryMsg::GameLobby { locator: loc(2) };
+        let res = query(&deps, msg).unwrap();
+        let value: GameLobbyResponse = from_binary(&res).unwrap();
+        assert_eq!(false, value.game_started);
+    }
+
+    #[test]
+    fn claim_private_lobby_inactivity() {
+        let mut deps = mock_dependencies(20, &coins(0, "uscrt"));
+        let env = mock_env("creator", &[]);
+        let msg = InitMsg {};
+        init(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player1", &coins(FUNDING_AMOUNT, "uscrt"));
+        let msg = HandleMsg::PrivateGame { locator: loc(5) };
+        handle(&mut deps, env, msg).unwrap();
+
+        let env = mock_env("player1", &[]);
+        let msg = HandleMsg::ClaimInactivity { locator: loc(5) };
+        let res = handle(&mut deps, env, msg).unwrap();
+
+        assert_eq!(res.messages.len(), 1);
+        match &res.messages[0] {
+            CosmosMsg::Bank(BankMsg::Send {
+                to_address, amount, ..
+            }) => {
+                assert_eq!(to_address.as_str(), "player1");
+                assert_eq!(amount.len(), 1);
+                assert_eq!(amount[0].denom, "uscrt");
+                assert_eq!(amount[0].amount, Uint128(FUNDING_AMOUNT));
+            }
+            _ => {
+                panic!("Expected claim for inactivity");
+            }
+        }
+
+        // Can't double-claim
+        let env = mock_env("player1", &[]);
+        let msg = HandleMsg::ClaimInactivity { locator: loc(5) };
+        handle(&mut deps, env, msg).unwrap_err();
+
+        // Lobby becomes non-joinable
+        let env = mock_env("player2", &coins(FUNDING_AMOUNT, "uscrt"));
+        let msg = HandleMsg::PrivateGame { locator: loc(5) };
         handle(&mut deps, env, msg).unwrap_err();
     }
 
