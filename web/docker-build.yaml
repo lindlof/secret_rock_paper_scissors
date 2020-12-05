@@ -1,17 +1,14 @@
 version: '3.8'
 services:
   web:
-    stdin_open: true
     build:
       context: .
-    command: ['npm', 'run', 'start']
+    command: ['npm', 'run', 'build']
     environment:
       - 'REACT_APP_CHAIN_ID=${REACT_APP_CHAIN_ID}'
       - 'REACT_APP_CHAIN_NAME=${REACT_APP_CHAIN_NAME}'
       - 'REACT_APP_LCD_URL=${REACT_APP_LCD_URL}'
       - 'REACT_APP_RPC_URL=${REACT_APP_RPC_URL}'
       - 'REACT_APP_CONTRACT=${REACT_APP_CONTRACT}'
-    ports:
-      - '3000:3000'
     volumes:
-      - './:/app'
+      - './build/:/app/build'
