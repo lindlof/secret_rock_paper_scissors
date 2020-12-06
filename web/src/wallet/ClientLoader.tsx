@@ -14,7 +14,7 @@ interface Props {
   cancel: Function;
 }
 
-export default (props: React.PropsWithChildren<Props>) => {
+const ClientLoader = (props: React.PropsWithChildren<Props>) => {
   const { walletType, config, setClient, cancel } = props;
 
   useEffect(() => {
@@ -69,3 +69,5 @@ export default (props: React.PropsWithChildren<Props>) => {
     </div>
   );
 };
+
+export default ClientLoader;

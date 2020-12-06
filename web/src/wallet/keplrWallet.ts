@@ -1,6 +1,6 @@
 import * as SecretJS from 'secretjs';
 
-export default async (
+const keplrWallet = async (
   chainId: string,
   chainName: string,
   suggestChain: boolean,
@@ -141,3 +141,5 @@ export default async (
 
   setClient(secretJsClient);
 };
+
+export default keplrWallet;

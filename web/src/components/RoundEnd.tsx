@@ -29,7 +29,7 @@ interface Props {
   rounds: Array<Round | undefined>;
 }
 
-export default (props: Props) => {
+const RoundEnd = (props: Props) => {
   const classes = useStyles();
   const { round, rounds } = props;
   const [currentRound, setCurrentRound] = useState<number>(round);
@@ -75,3 +75,5 @@ export default (props: Props) => {
     </div>
   );
 };
+
+export default RoundEnd;

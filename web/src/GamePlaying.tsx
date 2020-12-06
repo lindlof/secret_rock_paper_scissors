@@ -56,7 +56,7 @@ enum DisplayContent {
   Ending,
 }
 
-export default (props: Props) => {
+const GamePlaying = (props: Props) => {
   const classes = useStyles();
   const { game, playHandsign, leaveGame, claimInactivity, enqueueSnackbar } = props;
   const [pickedRound, setPickedRound] = useState<number>();
@@ -221,3 +221,5 @@ export default (props: Props) => {
     </div>
   );
 };
+
+export default GamePlaying;

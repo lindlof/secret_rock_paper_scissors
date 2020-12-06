@@ -18,7 +18,7 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default () => {
+const Banner = () => {
   const classes = useStyles();
 
   return (
@@ -41,3 +41,4 @@ export default () => {
     </div>
   );
 };
+export default Banner;

@@ -30,7 +30,7 @@ interface Props {
   faucetUrl: string | undefined;
 }
 
-export default (props: Props) => {
+const Wallet = (props: Props) => {
   const classes = useStyles();
   const { client, setClient, faucetUrl } = props;
   const [walletType, setWalletType] = useLocalStorage<WalletType | undefined>(
@@ -118,3 +118,5 @@ const getScrtBalance = (account: SecretJS.Account | undefined): number => {
   }
   return 0;
 };
+
+export default Wallet;

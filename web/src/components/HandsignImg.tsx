@@ -26,7 +26,7 @@ interface Props {
   onClick?: Function;
 }
 
-export default (props: Props) => {
+const HandsignImg = (props: Props) => {
   const classes = useStyles();
   let handsignImg = classes.handsignImg;
   if (props.onClick) {
@@ -56,3 +56,5 @@ export default (props: Props) => {
     </div>
   );
 };
+
+export default HandsignImg;

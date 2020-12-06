@@ -8,7 +8,7 @@ interface Props {
   setGame: Function;
 }
 
-export default (props: React.PropsWithChildren<Props>) => {
+const GameTicker = (props: React.PropsWithChildren<Props>) => {
   const { children, client, game, setGame } = props;
 
   useEffect(() => {
@@ -26,3 +26,5 @@ export default (props: React.PropsWithChildren<Props>) => {
 
   return <div>{children}</div>;
 };
+
+export default GameTicker;

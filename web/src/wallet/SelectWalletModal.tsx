@@ -32,7 +32,7 @@ interface Props {
   setClient: (client: SecretJS.SigningCosmWasmClient) => void;
 }
 
-export default (props: Props) => {
+const SelectWalletModal = (props: Props) => {
   const classes = useStyles();
   const { walletType, setWalletType, client, setClient } = props;
 
@@ -76,3 +76,5 @@ export default (props: Props) => {
     </div>
   );
 };
+
+export default SelectWalletModal;

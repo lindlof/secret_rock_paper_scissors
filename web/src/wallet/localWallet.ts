@@ -1,7 +1,7 @@
 import * as SecretJS from 'secretjs';
 import * as bip39 from 'bip39';
 
-export default async (lcdUrl: string, setClient: Function) => {
+const localWallet = async (lcdUrl: string, setClient: Function) => {
   let mnemonic = localStorage.getItem('mnemonic');
   if (!mnemonic) {
     mnemonic = bip39.generateMnemonic();
@@ -41,3 +41,5 @@ export default async (lcdUrl: string, setClient: Function) => {
   );
   setClient(secretJsClient);
 };
+
+export default localWallet;

@@ -16,10 +16,12 @@ const useStyles = makeStyles((theme) => ({
   },
 }));
 
-export default (props: Props) => {
+const ScoreStar = (props: Props) => {
   const classes = useStyles();
   const { pos, score, className } = props;
   const cls = clsx(className, classes.star);
 
   return <img src={pos < score ? starGold : starBlank} alt={'star blank'} className={cls} />;
 };
+
+export default ScoreStar;
