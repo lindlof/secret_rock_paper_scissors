@@ -9,9 +9,9 @@ services:
     volumes:
       - "./contract:/root/code"
       - "./docker:/root/docker"
-    image: "enigmampc/secret-network-sw-dev:v1.0.2"
+    image: "enigmampc/secret-network-sw-dev:v1.0.3"
   lcdserver:
-    image: "enigmampc/secret-network-sw-dev:v1.0.2"
+    image: "enigmampc/secret-network-sw-dev:v1.0.3"
     entrypoint: "secretcli rest-server --trust-node=true --node tcp://secretdev:26657 --laddr tcp://0.0.0.0:1337"
   corsproxy:
     image: caddy
