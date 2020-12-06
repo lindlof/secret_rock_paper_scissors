@@ -21,4 +21,4 @@ export REACT_APP_CHAIN_NAME="Secret localhost"
 export REACT_APP_LCD_URL=http://localhost:1338
 export REACT_APP_RPC_URL=http://localhost:26657
 export REACT_APP_CONTRACT="$CONTRACT"
-docker-compose up -f docker-development.yaml --build
+docker-compose -f docker-development.yaml up --build
