@@ -1,0 +1,8 @@
+version: '3.8'
+services:
+  web:
+    build:
+      context: .
+    command: ['npm', 'run', 'build:production']
+    volumes:
+      - './build/:/app/build'

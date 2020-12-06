@@ -6,6 +6,7 @@ interface Config {
   readonly rpcUrl: string;
   readonly contract: string;
   readonly faucetUrl: string | undefined;
+  readonly enableLocalWallet: boolean;
 }
 
 const envConfig = (): Config => {
@@ -17,6 +18,7 @@ const envConfig = (): Config => {
     rpcUrl: requiredEnv('REACT_APP_RPC_URL'),
     contract: requiredEnv('REACT_APP_CONTRACT'),
     faucetUrl: process.env.REACT_APP_FAUCET,
+    enableLocalWallet: requiredBoolean('REACT_APP_ENABLE_LOCAL_WALLET'),
   };
 };
 

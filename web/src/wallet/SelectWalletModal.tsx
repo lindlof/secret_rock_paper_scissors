@@ -55,9 +55,11 @@ export default (props: Props) => {
                 >
                   Use Keplr
                 </Button>
-                <Button variant="contained" onClick={() => setWalletType(WalletType.LocalWallet)}>
-                  Local wallet
-                </Button>
+                {config.enableLocalWallet && (
+                  <Button variant="contained" onClick={() => setWalletType(WalletType.LocalWallet)}>
+                    Local wallet
+                  </Button>
+                )}
               </div>
             )}
             {walletType && (
