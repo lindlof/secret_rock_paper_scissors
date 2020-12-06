@@ -14,7 +14,10 @@ const GameTicker = (props: React.PropsWithChildren<Props>) => {
   useEffect(() => {
     if (!client || !game) return;
     const timer = setInterval(async () => {
-      const update = await Game.tick(client, game);
+      let update: Game.TickUpdate | undefined;
+      try {
+        update = await Game.tick(client, game);
+      } catch {}
       if (update === undefined) return;
       setGame((g: Game.Game): Game.Game | undefined => {
         if (!update) return;

@@ -205,5 +205,5 @@ const claimInactivity = async (client: SecretJS.SigningCosmWasmClient, game: Gam
   }
 };
 
-export type { Game, Round };
+export type { Game, Round, TickUpdate };
 export { Stage, create, tick, playHandsign, claimInactivity, Result, defaults };
