@@ -70,6 +70,7 @@ export default (props: Props) => {
     try {
       await claimInactivity();
     } catch {
+      enqueueSnackbar('Secret error', { variant: 'error' });
       setClaimingInactivity(false);
     }
   };
@@ -122,9 +123,13 @@ export default (props: Props) => {
           )}
           <Grid item>
             <Typography>Waiting for other player</Typography>
-            <Button variant="contained" color="primary" onClick={tryClaimInactivity}>
-              Cancel game
-            </Button>
+            {claimingInactivity ? (
+              <CircularProgress />
+            ) : (
+              <Button variant="contained" color="primary" onClick={tryClaimInactivity}>
+                Cancel game
+              </Button>
+            )}
           </Grid>
         </Grid>
       </Container>
