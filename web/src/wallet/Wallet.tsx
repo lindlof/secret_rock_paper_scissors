@@ -7,6 +7,7 @@ import CardContent from '@material-ui/core/CardContent';
 import CardActions from '@material-ui/core/CardActions';
 import Typography from '@material-ui/core/Typography';
 import SelectWalletModal from './SelectWalletModal';
+import CircularProgress from '@material-ui/core/CircularProgress';
 import { WalletType, walletTypeName } from './model';
 import { useLocalStorage } from '../utils';
 
@@ -22,12 +23,20 @@ const useStyles = makeStyles((theme) => ({
   address: {
     wordBreak: 'break-all',
   },
+  progress: {
+    marginRight: '0.7rem',
+  },
 }));
 
 interface Props {
   client: SecretJS.SigningCosmWasmClient | undefined;
   setClient: (client: SecretJS.SigningCosmWasmClient | undefined) => void;
   faucetUrl: string | undefined;
+}
+
+interface Account {
+  balance: number;
+  loading: boolean;
 }
 
 const Wallet = (props: Props) => {
@@ -38,7 +47,7 @@ const Wallet = (props: Props) => {
     undefined,
   );
 
-  const [account, setAccount] = useState<SecretJS.Account | undefined>();
+  const [account, setAccount] = useState<Account | undefined>();
   useEffect(() => {
     if (!client) return;
     getAccount(client, setAccount);
@@ -47,6 +56,7 @@ const Wallet = (props: Props) => {
     }, 10000);
     return () => clearInterval(interval);
   }, [client]);
+  console.log('account', account);
 
   return (
     <div className={classes.root}>
@@ -71,13 +81,16 @@ const Wallet = (props: Props) => {
               >
                 {client.senderAddress}
               </Typography>
-              {faucetUrl && getScrtBalance(account) < 20 && (
+              {faucetUrl && account && account.balance < 20 && (
                 <Button variant="contained" color="primary" href={faucetUrl} target="blank">
                   Get funds
                 </Button>
               )}
               <Typography variant="body1" color="textPrimary" component="p">
-                {getScrtBalance(account)} SCRT
+                {!account?.loading && (
+                  <CircularProgress color="secondary" size="1rem" className={classes.progress} />
+                )}
+                {account?.balance} SCRT
               </Typography>
             </span>
           ) : (
@@ -103,9 +116,10 @@ const Wallet = (props: Props) => {
 const getAccount = async (client: SecretJS.SigningCosmWasmClient, setAccount: Function) => {
   try {
     const account = await client.getAccount(client.senderAddress);
-    setAccount(account);
-  } catch (e) {
-    setAccount(undefined);
+    console.log('a', account);
+    setAccount({ balance: getScrtBalance(account), loading: true });
+  } catch {
+    setAccount((a: Account) => ({ ...a, loading: false }));
   }
 };
 
