@@ -33,7 +33,12 @@ export const App: React.FC = () => {
         </Grid>
         <Grid item xs={12} sm={4}>
           <Grid container justify="flex-end">
-            <Wallet client={client} setClient={setClient} faucetUrl={config.faucetUrl} />
+            <Wallet
+              client={client}
+              setClient={setClient}
+              faucetUrl={config.faucetUrl}
+              refreshBalance={game}
+            />
           </Grid>
         </Grid>
       </Grid>

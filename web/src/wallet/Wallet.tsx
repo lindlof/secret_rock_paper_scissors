@@ -32,6 +32,7 @@ interface Props {
   client: SecretJS.SigningCosmWasmClient | undefined;
   setClient: (client: SecretJS.SigningCosmWasmClient | undefined) => void;
   faucetUrl: string | undefined;
+  refreshBalance: Object;
 }
 
 interface Account {
@@ -41,7 +42,7 @@ interface Account {
 
 const Wallet = (props: Props) => {
   const classes = useStyles();
-  const { client, setClient, faucetUrl } = props;
+  const { client, setClient, faucetUrl, refreshBalance } = props;
   const [walletType, setWalletType] = useLocalStorage<WalletType | undefined>(
     'wallet_type',
     undefined,
@@ -55,8 +56,7 @@ const Wallet = (props: Props) => {
       getAccount(client, setAccount);
     }, 10000);
     return () => clearInterval(interval);
-  }, [client]);
-  console.log('account', account);
+  }, [client, refreshBalance]);
 
   return (
     <div className={classes.root}>
@@ -116,7 +116,6 @@ const Wallet = (props: Props) => {
 const getAccount = async (client: SecretJS.SigningCosmWasmClient, setAccount: Function) => {
   try {
     const account = await client.getAccount(client.senderAddress);
-    console.log('a', account);
     setAccount({ balance: getScrtBalance(account), loading: true });
   } catch {
     setAccount((a: Account) => ({ ...a, loading: false }));
