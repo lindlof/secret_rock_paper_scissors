@@ -5,4 +5,4 @@ services:
       context: .
     command: ['npm', 'run', 'build:testnet']
     volumes:
-      - './build/:/app/build'
+      - './web-testnet:/app/build'

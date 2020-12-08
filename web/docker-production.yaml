@@ -3,6 +3,6 @@ services:
   web:
     build:
       context: .
-    command: ['npm', 'run', 'build:production']
+    command: ['npm', 'run', 'build']
     volumes:
-      - './build/:/app/build'
+      - './web-mainnet/:/app/build'
