@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Button } from '@material-ui/core';
+import { Button, Typography } from '@material-ui/core';
+import Box from '@material-ui/core/Box';
 import * as SecretJS from 'secretjs';
 import { useLocalStorage } from './utils';
 import * as Msg from './msg';
@@ -8,6 +9,7 @@ import * as Game from './game';
 import GamePlaying from './GamePlaying';
 import { useSnackbar } from 'notistack';
 import Wallet from './wallet/Wallet';
+import useAccount from './wallet/useAccount';
 import Banner from './Banner';
 import Grid from '@material-ui/core/Grid';
 import CircularProgress from '@material-ui/core/CircularProgress';
@@ -22,6 +24,8 @@ export const App: React.FC = () => {
     undefined,
     Game.defaults,
   );
+  const account = useAccount(client, game);
+  const lowBalance = account && account.balance < 20;
   const { enqueueSnackbar } = useSnackbar();
   routeUrl(client, setGame, enqueueSnackbar);
 
@@ -34,10 +38,10 @@ export const App: React.FC = () => {
         <Grid item xs={12} sm={4}>
           <Grid container justify="flex-end">
             <Wallet
+              account={account}
               client={client}
               setClient={setClient}
               faucetUrl={config.faucetUrl}
-              refreshBalance={game}
             />
           </Grid>
         </Grid>
@@ -59,10 +63,24 @@ export const App: React.FC = () => {
       {game === undefined && client && (
         <Grid container direction="column" justify="center" alignItems="center" spacing={1}>
           <Grid item xs={12}>
+            <Box bgcolor="secondary.main" color="primary.contrastText" p={1}>
+              {lowBalance && (
+                <div>
+                  <Typography>11 SCRT required to play</Typography>
+                  <Typography variant="subtitle2" align="center">
+                    (10 SCRT entry + fees)
+                  </Typography>
+                </div>
+              )}
+              {!lowBalance && <Typography>Play for 10 SCRT</Typography>}
+            </Box>
+          </Grid>
+          <Grid item xs={12}>
             <Button
               variant="contained"
               color="primary"
               size="large"
+              disabled={lowBalance}
               onClick={() => playGame(client, config.contract, true, setGame, enqueueSnackbar)}
             >
               Play with Friend
@@ -72,6 +90,7 @@ export const App: React.FC = () => {
             <Button
               variant="contained"
               color="primary"
+              disabled={lowBalance}
               onClick={() => playGame(client, config.contract, false, setGame, enqueueSnackbar)}
             >
               Play with Anyone
