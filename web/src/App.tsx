@@ -25,7 +25,7 @@ export const App: React.FC = () => {
     Game.defaults,
   );
   const account = useAccount(client, game);
-  const lowBalance = account && account.balance < 20;
+  const lowBalance = account && account.balance < 11;
   const { enqueueSnackbar } = useSnackbar();
   routeUrl(client, setGame, enqueueSnackbar);
 
