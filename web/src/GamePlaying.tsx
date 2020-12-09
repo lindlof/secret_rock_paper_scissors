@@ -213,11 +213,13 @@ const GamePlaying = (props: Props) => {
           </Paper>
         </Grid>
       </Grid>
-      <div className={classes.leave}>
-        <Button variant="contained" color="primary" onClick={() => leaveGame()}>
-          Leave game
-        </Button>
-      </div>
+      {game.stage === Game.Stage.Over && (
+        <div className={classes.leave}>
+          <Button variant="contained" color="primary" onClick={() => leaveGame()}>
+            Leave game
+          </Button>
+        </div>
+      )}
     </div>
   );
 };
