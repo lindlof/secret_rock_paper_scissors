@@ -55,7 +55,7 @@ const defaults = Object.freeze({
   contract: '',
   privateGame: false,
   locator: '',
-  playerNumber: 1,
+  playerNumber: undefined,
   stage: Stage.Lobby,
   round: 1,
   won: false,
