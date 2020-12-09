@@ -124,7 +124,7 @@ const playGame = async (
   } catch (e) {
     if (e.message !== 'ciphertext not set') {
       setGame(undefined);
-      enqueueSnackbar('Fail. Try funding wallet?', { variant: 'error' });
+      enqueueSnackbar('Failed', { variant: 'error' });
       console.log('playGame error', e);
       return;
     }
