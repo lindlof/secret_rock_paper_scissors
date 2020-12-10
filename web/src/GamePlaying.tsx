@@ -75,6 +75,11 @@ const GamePlaying = (props: Props) => {
     }
   };
 
+  if (game.stage === Game.Stage.Creating) {
+    return <CircularProgress />;
+    // TODO: Leaving game is not getting created
+  }
+
   let displayContent: DisplayContent = DisplayContent.PickHandsign;
   if (pickedRound === game.round) {
     displayContent = DisplayContent.Loading;

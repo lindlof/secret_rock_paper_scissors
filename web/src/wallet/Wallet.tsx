@@ -71,7 +71,7 @@ const Wallet = (props: Props) => {
                   Get funds
                 </Button>
               )}
-              <Typography variant="body1" color="textPrimary" component="p">
+              <Typography variant="body1" color="textPrimary" component="div">
                 {!account?.loading && (
                   <CircularProgress color="secondary" size="1rem" className={classes.progress} />
                 )}

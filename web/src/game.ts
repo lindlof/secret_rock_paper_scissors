@@ -35,6 +35,7 @@ interface TickUpdate {
 }
 
 enum Stage {
+  Creating = 'CREATING',
   Lobby = 'LOBBY',
   GameOn = 'GAME_ON',
   Over = 'OVER',
@@ -56,7 +57,7 @@ const defaults = Object.freeze({
   privateGame: false,
   locator: '',
   playerNumber: undefined,
-  stage: Stage.Lobby,
+  stage: Stage.Creating,
   round: 1,
   won: false,
   wins: 0,
@@ -72,7 +73,7 @@ const defaults = Object.freeze({
 const create = (contract: string, privateGame: boolean, joinLocator?: string): Game => {
   let locator = joinLocator;
   let playerNumber: number | undefined;
-  let stage = Stage.Lobby;
+  let stage = Stage.Creating;
   if (!locator) {
     const randomLocator = new Uint8Array(32);
     crypto.getRandomValues(randomLocator);
@@ -114,11 +115,14 @@ const tick = async (
     winDeadlineSeconds: game.winDeadlineSeconds,
     lossDeadlineSeconds: game.lossDeadlineSeconds,
   };
-  if (game.stage === Stage.Lobby) {
+  if (game.stage === Stage.Creating || game.stage === Stage.Lobby) {
     const lobby = await client.queryContractSmart(game.contract, {
       game_lobby: { locator: game.locator },
     });
-    if (!lobby.game_started) return;
+    if (!lobby.game_started) {
+      if (game.stage === Stage.Creating) return { ...game, stage: Stage.Lobby };
+      return;
+    }
 
     let playerNumber = update.playerNumber;
     if (playerNumber === undefined) {

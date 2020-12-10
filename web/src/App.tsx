@@ -12,18 +12,13 @@ import Wallet from './wallet/Wallet';
 import useAccount from './wallet/useAccount';
 import Banner from './Banner';
 import Grid from '@material-ui/core/Grid';
-import CircularProgress from '@material-ui/core/CircularProgress';
 import GameTicker from './components/GameTicker';
 
 const config = envConfig();
 
 export const App: React.FC = () => {
   const [client, setClient] = useState<SecretJS.SigningCosmWasmClient | undefined>();
-  const [game, setGame] = useLocalStorage<Game.Game | null | undefined>(
-    'game',
-    undefined,
-    Game.defaults,
-  );
+  const [game, setGame] = useLocalStorage<Game.Game | undefined>('game', undefined, Game.defaults);
   const account = useAccount(client, game);
   const lowBalance = account && account.balance < 11;
   const { enqueueSnackbar } = useSnackbar();
@@ -59,7 +54,6 @@ export const App: React.FC = () => {
           />
         </GameTicker>
       )}
-      {game === null && <CircularProgress />}
       {game === undefined && client && (
         <Grid container direction="column" justify="center" alignItems="center" spacing={1}>
           <Grid item xs={12}>
@@ -110,17 +104,17 @@ const playGame = async (
   enqueueSnackbar: Function,
   locator?: string,
 ) => {
-  setGame(null, false);
-
   const game = Game.create(contract, privateGame, locator);
+  setGame(game);
   const method = privateGame ? 'private_game' : 'join_game';
   try {
-    await client.execute(contract, { [method]: { locator: game.locator } }, undefined, [
+    const res = await client.execute(contract, { [method]: { locator: game.locator } }, undefined, [
       {
         amount: '10000000',
         denom: 'uscrt',
       },
     ]);
+    console.log('txn', res.transactionHash);
   } catch (e) {
     if (e.message !== 'ciphertext not set') {
       setGame(undefined);
@@ -129,7 +123,6 @@ const playGame = async (
       return;
     }
   }
-  setGame(game);
 };
 
 const routeUrl = (
