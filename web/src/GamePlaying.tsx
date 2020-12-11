@@ -76,8 +76,28 @@ const GamePlaying = (props: Props) => {
   };
 
   if (game.stage === Game.Stage.Creating) {
-    return <CircularProgress />;
-    // TODO: Leaving game is not getting created
+    console.log('createdAt', game.createdAt);
+    const now = Number(new Date());
+    // TODO: Confirmation dialog
+    // TODO: If we can see that entry transaction was rejected abandon automatically
+    return (
+      <div>
+        <CircularProgress />
+        {game.createdAt + 10 * 1000 < now && (
+          <div>
+            <Typography>
+              This is taking a while. You can abandon if your entry transaction doesn't go through.
+            </Typography>
+            <Typography>
+              Otherwise, abandoning results in loss of your entry funds (10 SCRT).
+            </Typography>
+            <Button variant="contained" color="secondary" onClick={() => leaveGame()}>
+              DANGER: Abandon game
+            </Button>
+          </div>
+        )}
+      </div>
+    );
   }
 
   let displayContent: DisplayContent = DisplayContent.PickHandsign;

@@ -5,6 +5,8 @@ interface Game {
   readonly contract: string;
   readonly privateGame: boolean;
   readonly locator: string;
+  readonly createdAt: number;
+  readonly updatedAt: number;
   readonly playerNumber: number | undefined;
   readonly stage: Stage;
   readonly round: number;
@@ -20,6 +22,7 @@ interface Game {
 }
 
 interface TickUpdate {
+  readonly updatedAt: number;
   readonly playerNumber: number | undefined;
   readonly stage: Stage;
   readonly round: number;
@@ -52,10 +55,12 @@ interface Round {
   readonly handsign: Msg.Handsign | undefined;
 }
 
-const defaults = Object.freeze({
+const defaults: Game = Object.freeze({
   contract: '',
   privateGame: false,
   locator: '',
+  createdAt: 0,
+  updatedAt: 0,
   playerNumber: undefined,
   stage: Stage.Creating,
   round: 1,
@@ -95,6 +100,7 @@ const create = (contract: string, privateGame: boolean, joinLocator?: string): G
     locator,
     playerNumber,
     stage,
+    createdAt: Number(new Date()),
   };
 };
 
@@ -103,6 +109,7 @@ const tick = async (
   game: Game,
 ): Promise<TickUpdate | undefined> => {
   let update: TickUpdate = {
+    updatedAt: Number(new Date()),
     playerNumber: game.playerNumber,
     stage: game.stage,
     round: game.round,
@@ -120,8 +127,8 @@ const tick = async (
       game_lobby: { locator: game.locator },
     });
     if (!lobby.game_started) {
-      if (game.stage === Stage.Creating) return { ...game, stage: Stage.Lobby };
-      return;
+      if (game.stage === Stage.Creating) return { ...update, stage: Stage.Lobby };
+      return update;
     }
 
     let playerNumber = update.playerNumber;
