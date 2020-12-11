@@ -117,8 +117,7 @@ const playGame = async (
     console.log('txn', res.transactionHash);
   } catch (e) {
     if (e.message !== 'ciphertext not set') {
-      setGame(undefined);
-      enqueueSnackbar('Failed', { variant: 'error' });
+      enqueueSnackbar('Game creation erroring', { variant: 'error' });
       console.log('playGame error', e);
       return;
     }
