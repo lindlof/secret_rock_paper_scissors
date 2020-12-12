@@ -29,12 +29,8 @@ const localWallet = async (lcdUrl: string, setClient: Function) => {
     (signBytes) => signingPen.sign(signBytes),
     tx_encryption_seed,
     {
-      init: {
-        amount: [{ amount: '250000', denom: 'uscrt' }],
-        gas: '250000',
-      },
       exec: {
-        amount: [{ amount: '100000', denom: 'uscrt' }],
+        amount: [{ amount: '250000', denom: 'uscrt' }],
         gas: '250000',
       },
     },

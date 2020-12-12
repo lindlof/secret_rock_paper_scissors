@@ -130,10 +130,6 @@ const keplrWallet = async (
     offlineSigner,
     enigmaUtils,
     {
-      init: {
-        amount: [{ amount: '250000', denom: 'uscrt' }],
-        gas: '250000',
-      },
       exec: {
         amount: [{ amount: '250000', denom: 'uscrt' }],
         gas: '250000',
