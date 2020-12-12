@@ -117,14 +117,20 @@ const playGame = async (
   } catch (e) {
     if (e instanceof Error) {
       if (e.message === 'ciphertext not set') return;
+      if (e.message === 'Request rejected') {
+        enqueueSnackbar('Transaction rejected', { variant: 'error' });
+        setGame(undefined);
+        return;
+      }
       if (e.message.includes('Error when posting tx ')) {
         console.log('playGame error:', e.message);
         enqueueSnackbar('Error posting transaction', { variant: 'error' });
         setGame(undefined);
+        return;
       }
     }
     console.log('playGame error:', e.message);
-    enqueueSnackbar('Game creation erroring', { variant: 'error' });
+    enqueueSnackbar('Game creation error', { variant: 'error' });
   }
 };
 
