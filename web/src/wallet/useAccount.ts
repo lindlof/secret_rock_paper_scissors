@@ -10,8 +10,8 @@ const useAccount = (
   useEffect(() => {
     if (!client) return;
     getAccount(client, setAccount);
-    const interval = setInterval(() => {
-      getAccount(client, setAccount);
+    const interval = setInterval(async () => {
+      await getAccount(client, setAccount);
     }, 10000);
     return () => clearInterval(interval);
   }, [client, refreshOn]);

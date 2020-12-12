@@ -19,8 +19,8 @@ const GameTicker = (props: React.PropsWithChildren<Props>) => {
         update = await Game.tick(client, game);
       } catch {}
       if (update === undefined) return;
-      setGame((g: Game.Game): Game.Game | undefined => {
-        if (!update) return;
+      setGame((g: Game.Game | undefined): Game.Game | undefined => {
+        if (g === undefined || !update) return;
         return { ...g, ...update };
       });
     }, 2000);
