@@ -76,14 +76,11 @@ const GamePlaying = (props: Props) => {
   };
 
   if (game.stage === Game.Stage.Creating) {
-    console.log('createdAt', game.createdAt);
     const now = Number(new Date());
-    // TODO: Confirmation dialog
-    // TODO: If we can see that entry transaction was rejected abandon automatically
     return (
       <div>
         <CircularProgress />
-        {game.createdAt + 10 * 1000 < now && (
+        {now > game.createdAt + 10 * 1000 && (
           <div>
             <Typography>
               This is taking a while. You can abandon if your entry transaction doesn't go through.
@@ -91,7 +88,12 @@ const GamePlaying = (props: Props) => {
             <Typography>
               Otherwise, abandoning results in loss of your entry funds (10 SCRT).
             </Typography>
-            <Button variant="contained" color="secondary" onClick={() => leaveGame()}>
+            <Button
+              variant="contained"
+              color="secondary"
+              disabled={now < game.createdAt + 13 * 1000}
+              onClick={() => leaveGame()}
+            >
               DANGER: Abandon game
             </Button>
           </div>

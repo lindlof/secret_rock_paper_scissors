@@ -108,19 +108,23 @@ const playGame = async (
   setGame(game);
   const method = privateGame ? 'private_game' : 'join_game';
   try {
-    const res = await client.execute(contract, { [method]: { locator: game.locator } }, undefined, [
+    await client.execute(contract, { [method]: { locator: game.locator } }, undefined, [
       {
         amount: '10000000',
         denom: 'uscrt',
       },
     ]);
-    console.log('txn', res.transactionHash);
   } catch (e) {
-    if (e.message !== 'ciphertext not set') {
-      enqueueSnackbar('Game creation erroring', { variant: 'error' });
-      console.log('playGame error', e);
-      return;
+    if (e instanceof Error) {
+      if (e.message === 'ciphertext not set') return;
+      if (e.message.includes('Error when posting tx ')) {
+        console.log('playGame error:', e.message);
+        enqueueSnackbar('Error posting transaction', { variant: 'error' });
+        setGame(undefined);
+      }
     }
+    console.log('playGame error:', e.message);
+    enqueueSnackbar('Game creation erroring', { variant: 'error' });
   }
 };
 
