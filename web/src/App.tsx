@@ -159,6 +159,7 @@ const playHandsign = async (
   } catch (e) {
     setGame((g: Game.Game) => ({ ...g, lastHandsign: undefined }));
     if (e instanceof Error) {
+      console.log('playHandsign error:', e.message);
       if (e.message === 'Request rejected') {
         enqueueSnackbar('Transaction rejected', { variant: 'error' });
         throw e;
@@ -168,7 +169,6 @@ const playHandsign = async (
         throw e;
       }
     }
-    console.log('playHandsign error:', e.message);
     enqueueSnackbar('Error playing handsign', { variant: 'error' });
     throw e;
   }
@@ -185,6 +185,7 @@ const claimInactivity = async (
     setGame(undefined);
   } catch (e) {
     if (e instanceof Error) {
+      console.log('claimInactivity error:', e.message);
       if (e.message === 'Request rejected') {
         enqueueSnackbar('Transaction rejected', { variant: 'error' });
         throw e;
@@ -194,7 +195,6 @@ const claimInactivity = async (
         throw e;
       }
     }
-    console.log('claimInactivity error:', e.message);
     enqueueSnackbar('Error ending game', { variant: 'error' });
     throw e;
   }
