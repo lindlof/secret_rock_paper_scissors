@@ -158,7 +158,7 @@ const routeUrl = (
   if (client && joinLocator) {
     setTimeout(() => {
       playGame(client, config.contract, true, setGame, loadGame, enqueueSnackbar, joinLocator);
-    }, 500);
+    }, 0);
     window.history.pushState('', '', document.location.origin);
   }
 };
