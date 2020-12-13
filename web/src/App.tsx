@@ -18,11 +18,15 @@ const config = envConfig();
 
 export const App: React.FC = () => {
   const [client, setClient] = useState<SecretJS.SigningCosmWasmClient | undefined>();
-  const [game, setGame] = useLocalStorage<Game.Game | undefined>('game', undefined, Game.defaults);
+  const [game, setGame, loadGame] = useLocalStorage<Game.Game | undefined>(
+    'game',
+    undefined,
+    Game.defaults,
+  );
   const account = useAccount(client, game);
   const lowBalance = account && account.balance < 11;
   const { enqueueSnackbar } = useSnackbar();
-  routeUrl(client, setGame, enqueueSnackbar);
+  routeUrl(client, setGame, loadGame, enqueueSnackbar);
 
   return (
     <div>
@@ -75,7 +79,9 @@ export const App: React.FC = () => {
               color="primary"
               size="large"
               disabled={lowBalance}
-              onClick={() => playGame(client, config.contract, true, setGame, enqueueSnackbar)}
+              onClick={() =>
+                playGame(client, config.contract, true, setGame, loadGame, enqueueSnackbar)
+              }
             >
               Play with Friend
             </Button>
@@ -85,7 +91,9 @@ export const App: React.FC = () => {
               variant="contained"
               color="primary"
               disabled={lowBalance}
-              onClick={() => playGame(client, config.contract, false, setGame, enqueueSnackbar)}
+              onClick={() =>
+                playGame(client, config.contract, false, setGame, loadGame, enqueueSnackbar)
+              }
             >
               Play with Anyone
             </Button>
@@ -101,9 +109,15 @@ const playGame = async (
   contract: string,
   privateGame: boolean,
   setGame: Function,
+  loadGame: Function,
   enqueueSnackbar: Function,
   locator?: string,
 ) => {
+  const currentGame = loadGame();
+  if (currentGame !== undefined) {
+    setGame(currentGame);
+    return;
+  }
   const game = Game.create(contract, privateGame, locator);
   setGame(game);
   const method = privateGame ? 'private_game' : 'join_game';
@@ -136,12 +150,15 @@ const playGame = async (
 const routeUrl = (
   client: SecretJS.SigningCosmWasmClient | undefined,
   setGame: Function,
+  loadGame: Function,
   enqueueSnackbar: Function,
 ) => {
   const url = new URL(window.location.href);
   const joinLocator = url.searchParams.get('game');
   if (client && joinLocator) {
-    playGame(client, config.contract, true, setGame, enqueueSnackbar, joinLocator);
+    setTimeout(() => {
+      playGame(client, config.contract, true, setGame, loadGame, enqueueSnackbar, joinLocator);
+    }, 500);
     window.history.pushState('', '', document.location.origin);
   }
 };

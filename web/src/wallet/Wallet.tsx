@@ -54,7 +54,7 @@ const Wallet = (props: Props) => {
       <Card className={classes.card}>
         <CardContent>
           <Typography variant="h5" color="textPrimary" gutterBottom>
-            {`${walletTypeName.get(walletType) || ''} Wallet`}
+            {walletType !== undefined && `${walletTypeName.get(walletType) || ''} Wallet`}
           </Typography>
           {client ? (
             <span>
