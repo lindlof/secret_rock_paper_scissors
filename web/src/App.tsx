@@ -52,7 +52,7 @@ export const App: React.FC = () => {
             playHandsign={(handsign: Msg.Handsign) =>
               playHandsign(client, game, handsign, setGame, enqueueSnackbar)
             }
-            leaveGame={() => setGame(undefined)}
+            leaveGame={() => leaveGame(setGame, loadGame)}
             claimInactivity={() => claimInactivity(client, game, setGame, enqueueSnackbar)}
             enqueueSnackbar={enqueueSnackbar}
           />
@@ -214,6 +214,15 @@ const claimInactivity = async (
     }
     enqueueSnackbar('Error ending game', { variant: 'error' });
     throw e;
+  }
+};
+
+const leaveGame = async (setGame: Function, loadGame: () => Game.Game | undefined) => {
+  const currentGame = loadGame();
+  if (currentGame && currentGame.stage !== Game.Stage.Over) {
+    setGame(currentGame);
+  } else {
+    setGame(undefined);
   }
 };
 
