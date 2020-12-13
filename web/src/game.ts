@@ -204,7 +204,10 @@ const playHandsign = async (
   try {
     await client.execute(game.contract, { play_hand: { handsign, locator: game.locator } });
   } catch (e) {
-    if (e.message !== 'ciphertext not set') throw e;
+    if (e instanceof Error) {
+      if (e.message === 'ciphertext not set') return;
+    }
+    throw e;
   }
 };
 
@@ -212,7 +215,10 @@ const claimInactivity = async (client: SecretJS.SigningCosmWasmClient, game: Gam
   try {
     await client.execute(game.contract, { claim_inactivity: { locator: game.locator } });
   } catch (e) {
-    if (e.message !== 'ciphertext not set') throw e;
+    if (e instanceof Error) {
+      if (e.message === 'ciphertext not set') return;
+    }
+    throw e;
   }
 };
 

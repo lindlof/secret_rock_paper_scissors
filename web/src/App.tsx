@@ -49,7 +49,7 @@ export const App: React.FC = () => {
               playHandsign(client, game, handsign, setGame, enqueueSnackbar)
             }
             leaveGame={() => setGame(undefined)}
-            claimInactivity={async () => setGame(await Game.claimInactivity(client, game))}
+            claimInactivity={() => claimInactivity(client, game, setGame, enqueueSnackbar)}
             enqueueSnackbar={enqueueSnackbar}
           />
         </GameTicker>
@@ -123,7 +123,6 @@ const playGame = async (
         return;
       }
       if (e.message.includes('Error when posting tx ')) {
-        console.log('playGame error:', e.message);
         enqueueSnackbar('Error posting transaction', { variant: 'error' });
         setGame(undefined);
         return;
@@ -157,9 +156,47 @@ const playHandsign = async (
   setGame((g: Game.Game) => ({ ...g, lastHandsign: handsign }));
   try {
     await Game.playHandsign(client, game, handsign);
-  } catch (error) {
+  } catch (e) {
     setGame((g: Game.Game) => ({ ...g, lastHandsign: undefined }));
-    enqueueSnackbar('Secret error', { variant: 'error' });
+    if (e instanceof Error) {
+      if (e.message === 'Request rejected') {
+        enqueueSnackbar('Transaction rejected', { variant: 'error' });
+        throw e;
+      }
+      if (e.message.includes('Error when posting tx ')) {
+        enqueueSnackbar('Error posting transaction', { variant: 'error' });
+        throw e;
+      }
+    }
+    console.log('playHandsign error:', e.message);
+    enqueueSnackbar('Error playing handsign', { variant: 'error' });
+    throw e;
+  }
+};
+
+const claimInactivity = async (
+  client: SecretJS.SigningCosmWasmClient,
+  game: Game.Game,
+  setGame: Function,
+  enqueueSnackbar: Function,
+) => {
+  try {
+    await Game.claimInactivity(client, game);
+    setGame(undefined);
+  } catch (e) {
+    if (e instanceof Error) {
+      if (e.message === 'Request rejected') {
+        enqueueSnackbar('Transaction rejected', { variant: 'error' });
+        throw e;
+      }
+      if (e.message.includes('Error when posting tx ')) {
+        enqueueSnackbar('Error posting transaction', { variant: 'error' });
+        throw e;
+      }
+    }
+    console.log('claimInactivity error:', e.message);
+    enqueueSnackbar('Error ending game', { variant: 'error' });
+    throw e;
   }
 };
 

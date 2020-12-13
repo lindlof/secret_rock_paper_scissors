@@ -43,7 +43,7 @@ const useStyles = makeStyles((theme) => ({
 
 interface Props {
   game: Game.Game;
-  playHandsign: Function;
+  playHandsign: (handsign: Msg.Handsign) => Promise<void>;
   leaveGame: Function;
   claimInactivity: () => Promise<void>;
   enqueueSnackbar: Function;
@@ -61,16 +61,19 @@ const GamePlaying = (props: Props) => {
   const { game, playHandsign, leaveGame, claimInactivity, enqueueSnackbar } = props;
   const [pickedRound, setPickedRound] = useState<number>();
   const [claimingInactivity, setClaimingInactivity] = useState<boolean>(false);
-  const pickHandsign = (handsign: Msg.Handsign) => {
+  const pickHandsign = async (handsign: Msg.Handsign) => {
     setPickedRound(game.round);
-    playHandsign(handsign);
+    try {
+      await playHandsign(handsign);
+    } catch {
+      setPickedRound(undefined);
+    }
   };
   const tryClaimInactivity = async () => {
     setClaimingInactivity(true);
     try {
       await claimInactivity();
     } catch {
-      enqueueSnackbar('Secret error', { variant: 'error' });
       setClaimingInactivity(false);
     }
   };
