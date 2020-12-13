@@ -66,7 +66,7 @@ export const App: React.FC = () => {
                 <div>
                   <Typography>11 SCRT required to play</Typography>
                   <Typography variant="subtitle2" align="center">
-                    (10 SCRT entry + fees)
+                    (10 SCRT entry + tx fees)
                   </Typography>
                 </div>
               )}
